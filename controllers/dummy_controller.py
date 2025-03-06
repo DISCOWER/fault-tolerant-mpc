@@ -5,7 +5,7 @@ from util.controller_debug import ControllerDebug, DebugVal
 
 class Controller:
     """
-    Controller for the system.
+    Dummy controller to test the system.
     """
 
     def __init__(self, model, history):
@@ -33,10 +33,11 @@ class Controller:
             ndarray: Control input for the system.
         """
         u = np.zeros(self.Nu)
-        u[0] = 1.0
-        u[1] = 1.0
-        u[4] = 1.0
-        u[5] = 1.0
+        # u[0] = 1.0
+        # u[1] = 1.0
+        # u[4] = 1.0
+        # u[5] = 1.0
+        u[12] = 1.0
 
         debug = DebugVal(self, time)
         debug.set_state(state)

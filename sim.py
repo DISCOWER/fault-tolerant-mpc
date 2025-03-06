@@ -19,7 +19,7 @@ sim_env = SimulationEnvironment(model, controller)
 sim_env.set_initial_state(
     position=[0,0,0],
     velocity=[0,0,0],
-    orientation=[1,0,0,0],
+    orientation=[0,0,0,1],
     angular_velocity=[0,0,0]
 )
 
