@@ -3,6 +3,8 @@ import casadi as ca
 import matplotlib.pyplot as plt
 import copy
 
+from util.animate import animate_trajectory
+
 class DebugVal:
     def __init__(self, controller, t):
         self.controller = str(controller)
@@ -171,4 +173,14 @@ class ControllerDebug:
             ax2[i, 1].set_title(f"Angular Velocity Error {i}")
 
         plt.tight_layout()
+
+    def animate_3d(self):
+        position = [h.position for h in self.history]
+        orientation = [h.orientation for h in self.history]
+        input = [h.input for h in self.history]
+
+        animate_trajectory(positions=position, 
+                           quaternions=orientation, 
+                           time=self.get_time(), 
+                           inputs=input)
 

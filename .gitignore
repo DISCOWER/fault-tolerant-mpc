@@ -1,0 +1,6 @@
+.vscode/*
+*.pyc
+documenation.md
+*.sh
+docs/*
+**/__pycache__/

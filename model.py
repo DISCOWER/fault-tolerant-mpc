@@ -54,14 +54,16 @@ class SystemModel:
         Args:
             dt (float): Time step for simulation (seconds)
         """
-
-        self.mass = 1.0
+        # KTH Freeflyer-ish dynamics
+        self.mass = 16.8
         self.inertia = np.array([
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0]
+            [0.2, 0.0, 0.0],
+            [0.0, 0.3, 0.0],
+            [0.0, 0.0, 0.25]
         ])
         self.inertia_inv = np.linalg.inv(self.inertia)
+
+        self.max_thrust = 3.4
 
         self.fun_options = {
             "jit": False,
@@ -87,10 +89,10 @@ class SystemModel:
         self.D[0, 6] =  1
         self.D[0, 7] =  1
         # force, y+direction
-        self.D[1, 8] =  1
-        self.D[1, 9] =  1
-        self.D[1,10] = -1
-        self.D[1,11] = -1
+        self.D[1, 8] = -1
+        self.D[1, 9] = -1
+        self.D[1,10] =  1
+        self.D[1,11] =  1
         # force, z+direction
         self.D[2,12] = -1
         self.D[2,13] =  1
@@ -102,14 +104,14 @@ class SystemModel:
         self.D[3,14] =  d1
         self.D[3,15] = -d1
         # torque, y-direction
-        self.D[4, 0] =  d1
-        self.D[4, 1] = -d1
-        self.D[4, 2] = -d1
-        self.D[4, 3] =  d1
-        self.D[4, 4] =  d1
-        self.D[4, 5] = -d1
-        self.D[4, 6] = -d1
-        self.D[4, 7] =  d1
+        self.D[4, 0] = -d1
+        self.D[4, 1] =  d1
+        self.D[4, 2] =  d1
+        self.D[4, 3] = -d1
+        self.D[4, 4] = -d1
+        self.D[4, 5] =  d1
+        self.D[4, 6] =  d1
+        self.D[4, 7] = -d1
         # torque, z-direction
         self.D[5, 0] =  d1
         self.D[5, 1] =  d1

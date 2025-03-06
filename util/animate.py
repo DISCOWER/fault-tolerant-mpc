@@ -4,8 +4,8 @@ from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-def animate_trajectory(positions, quaternions, box_dimensions=(0.5, 1.0, 0.5), 
-                       total_time=10.0, save_animation=False, save_path=None):
+def animate_trajectory(positions, quaternions, time, inputs=None, box_dimensions=(0.15, 0.15, 0.15), 
+                       save_animation=False, save_path=None):
     """
     Animate a 3D trajectory with a box moving along it, using quaternions for orientation.
     
@@ -15,10 +15,13 @@ def animate_trajectory(positions, quaternions, box_dimensions=(0.5, 1.0, 0.5),
         Array of shape (n, 3) containing the x, y, z positions along the trajectory.
     quaternions : array-like
         Array of shape (n, 4) containing the orientation quaternions [x, y, z, w].
+    time: array-like
+        Array of shape (n,) containing the time points for each position.
+    inputs : array-like, optional
+        Array of shape (n, 16) containing the 16-dimensional input for each thruster at each time point.
+        If None, no thruster arrows will be displayed.
     box_dimensions : tuple, optional
         The dimensions of the box (length, width, height), defaults to (0.5, 1.0, 0.5).
-    total_time : float, optional
-        The total time of the animation in seconds, defaults to 10.0.
     save_animation : bool, optional
         Whether to save the animation as a file, defaults to False.
     save_path : str, optional
@@ -33,11 +36,70 @@ def animate_trajectory(positions, quaternions, box_dimensions=(0.5, 1.0, 0.5),
     positions = np.array(positions)
     # Calculates internally with [w, x, y, z] quaternions instead of [x, y, z, w]
     quaternions = np.array(quaternions)
-    quaternions = np.roll(quaternions, 1, axis=0)
+    print(quaternions)
+    quaternions = np.roll(quaternions, 1, axis=1)
+    print(quaternions)
     num_frames = len(positions)
     
+    # Check if inputs are provided
+    if inputs is None:
+        inputs = np.zeros((num_frames, 16))
+    else:
+        inputs = np.array(inputs)
+        if inputs.shape[0] != num_frames or inputs.shape[1] != 16:
+            raise ValueError(f"inputs should have shape ({num_frames}, 16), got {inputs.shape}")
+    
+    # Define thruster positions and directions
+    d1 = 0.15
+    d2 = 0.12
+    d3 = 0.09
+    d4 = 0.05
+
+    thruster_positions = {
+         0: ( d1,  d2,  d4),
+         1: ( d1,  d2, -d4),
+         2: (-d1,  d2,  d4),
+         3: (-d1,  d2, -d4),
+         4: ( d1, -d2,  d4),
+         5: ( d1, -d2, -d4),
+         6: (-d1, -d2,  d4),
+         7: (-d1, -d2, -d4),
+         8: ( d3,  d1,  0),
+         9: (-d3,  d1,  0),
+        10: ( d3, -d1,  0),
+        11: (-d3, -d1,  0),
+        12: (  0,  d2,  d1),
+        13: (  0,  d2, -d1),
+        14: (  0, -d2,  d1),
+        15: (  0, -d2, -d1)
+    }
+
+    thruster_directions = {
+         0: ( 1,  0,  0),
+         1: ( 1,  0,  0),
+         2: (-1,  0,  0),
+         3: (-1,  0,  0),
+         4: ( 1,  0,  0),
+         5: ( 1,  0,  0),
+         6: (-1,  0,  0),
+         7: (-1,  0,  0),
+         8: ( 0,  1,  0),
+         9: ( 0,  1,  0),
+        10: ( 0, -1,  0),
+        11: ( 0, -1,  0),
+        12: ( 0,  0,  1),
+        13: ( 0,  0, -1),
+        14: ( 0,  0,  1),
+        15: ( 0,  0, -1)
+    }
+
+    # thruster_positions = {
+    #      1: ()
+    # }
+    
     # Create time stamps
-    t = np.linspace(0, total_time, num_frames)
+    t = time
+    total_time = t[-1]
     
     # Create the figure and 3D axis
     fig = plt.figure(figsize=(10, 8))
@@ -54,6 +116,9 @@ def animate_trajectory(positions, quaternions, box_dimensions=(0.5, 1.0, 0.5),
     
     # Variable to store the current cube visualization
     current_cube = None
+    
+    # Variable to store current thruster arrows
+    thruster_arrows = []
     
     # Function to create a box with proper orientation using quaternions
     def create_box(center, dimensions, quaternion):
@@ -96,7 +161,7 @@ def animate_trajectory(positions, quaternions, box_dimensions=(0.5, 1.0, 0.5),
         box = Poly3DCollection(face_vertices, alpha=0.7, linewidths=1, edgecolor='black', 
                               facecolors=colors)
         
-        return box
+        return box, rotation_matrix, transformed_vertices
     
     # Find the bounding box of the trajectory to set appropriate axis limits
     x_min, x_max = np.min(x) - 1, np.max(x) + 1
@@ -110,8 +175,18 @@ def animate_trajectory(positions, quaternions, box_dimensions=(0.5, 1.0, 0.5),
     ax.set_xlabel('X Position')
     ax.set_ylabel('Y Position')
     ax.set_zlabel('Z Position')
-    ax.set_title('3D Box Moving Along Trajectory')
+    ax.set_title('3D Box Moving Along Trajectory with Thrusters')
     
+    # Create arrow artists for each thruster
+    for i in range(16):
+        arrow, = ax.plot([], [], [], 'r-', linewidth=2, alpha=0.0)
+        thruster_arrows.append(arrow)
+
+    # Create arrows for local coordinate system
+    local_x_arrow, = ax.plot([], [], [], 'r-', linewidth=3)
+    local_y_arrow, = ax.plot([], [], [], 'g-', linewidth=3)
+    local_z_arrow, = ax.plot([], [], [], 'b-', linewidth=3) 
+
     # Initialize animation
     def init():
         trajectory_line.set_data([], [])
@@ -123,7 +198,20 @@ def animate_trajectory(positions, quaternions, box_dimensions=(0.5, 1.0, 0.5),
             current_cube.remove()
             current_cube = None
         
-        return [trajectory_line, time_text]
+        # Initialize all thruster arrows
+        for arrow in thruster_arrows:
+            arrow.set_data([], [])
+            arrow.set_3d_properties([])
+
+        # Initialize coordinate system arrows
+        local_x_arrow.set_data([], [])
+        local_x_arrow.set_3d_properties([])
+        local_y_arrow.set_data([], [])
+        local_y_arrow.set_3d_properties([])
+        local_z_arrow.set_data([], [])
+        local_z_arrow.set_3d_properties([])
+        
+        return [trajectory_line, time_text, local_x_arrow, local_y_arrow, local_z_arrow] + thruster_arrows
     
     # Animation update function
     def update(frame):
@@ -141,13 +229,75 @@ def animate_trajectory(positions, quaternions, box_dimensions=(0.5, 1.0, 0.5),
             current_cube.remove()
         
         # Create new box at current position with proper orientation
-        current_cube = create_box(pos, box_dimensions, quat)
+        current_cube, rotation_matrix, transformed_vertices = create_box(pos, box_dimensions, quat)
         ax.add_collection3d(current_cube)
         
+        # Update thruster arrows
+        for i in range(16):
+            # Get thruster position and direction in local coordinates
+            local_pos = np.array(thruster_positions[i])
+            local_dir = np.array(thruster_directions[i])
+            
+            # Apply rotation to thruster position and direction
+            rotated_pos = np.dot(local_pos, rotation_matrix.T)
+            rotated_dir = np.dot(local_dir, rotation_matrix.T)
+            
+            # Get global position
+            global_pos = rotated_pos + pos
+            
+            # Get input value for this thruster
+            input_val = inputs[frame, i]
+            
+            # Set arrow properties based on input
+            if abs(input_val) > 1e-5:
+                # Scale arrow length based on input
+                arrow_length = min(max(0.1, abs(input_val)), 1.0)  # Limit between 0.1 and 1.0
+                
+                # Calculate end point of arrow
+                end_point = global_pos + rotated_dir * arrow_length
+                
+                # Set arrow data
+                thruster_arrows[i].set_data([global_pos[0], end_point[0]], [global_pos[1], end_point[1]])
+                thruster_arrows[i].set_3d_properties([global_pos[2], end_point[2]])
+                
+                # Set arrow opacity
+                thruster_arrows[i].set_alpha(1.0)
+                
+                # Color based on thruster input intensity
+                color_intensity = min(1.0, abs(input_val))
+                thruster_arrows[i].set_color((1.0, 1.0 - color_intensity, 0))
+            else:
+                # Make arrow invisible for small inputs
+                thruster_arrows[i].set_alpha(0.0)
+
+        # Update local coordinate system arrows
+        arrow_length = 0.75  # Length of coordinate arrows
+        
+        # Update x-axis arrow (red)
+        x_dir = np.array([1, 0, 0])
+        rotated_x = np.dot(x_dir, rotation_matrix.T)
+        local_x_arrow.set_data([pos[0], pos[0] + rotated_x[0] * arrow_length], 
+                              [pos[1], pos[1] + rotated_x[1] * arrow_length])
+        local_x_arrow.set_3d_properties([pos[2], pos[2] + rotated_x[2] * arrow_length])
+        
+        # Update y-axis arrow (green)
+        y_dir = np.array([0, 1, 0])
+        rotated_y = np.dot(y_dir, rotation_matrix.T)
+        local_y_arrow.set_data([pos[0], pos[0] + rotated_y[0] * arrow_length], 
+                              [pos[1], pos[1] + rotated_y[1] * arrow_length])
+        local_y_arrow.set_3d_properties([pos[2], pos[2] + rotated_y[2] * arrow_length])
+        
+        # Update z-axis arrow (blue)
+        z_dir = np.array([0, 0, 1])
+        rotated_z = np.dot(z_dir, rotation_matrix.T)
+        local_z_arrow.set_data([pos[0], pos[0] + rotated_z[0] * arrow_length], 
+                              [pos[1], pos[1] + rotated_z[1] * arrow_length])
+        local_z_arrow.set_3d_properties([pos[2], pos[2] + rotated_z[2] * arrow_length]) 
+
         # Update time
         time_text.set_text(f'Time: {t[frame]:.2f}s')
         
-        return [trajectory_line, time_text, current_cube]
+        return [trajectory_line, time_text, current_cube] + thruster_arrows
     
     # Create the animation
     anim = FuncAnimation(fig, update, frames=num_frames, init_func=init,
@@ -167,6 +317,8 @@ def animate_trajectory(positions, quaternions, box_dimensions=(0.5, 1.0, 0.5),
             raise ValueError("save_path must end with '.gif' or '.mp4'")
     
     plt.tight_layout()
+
+    plt.show()
     return anim
 
 def generate_sample_trajectory():
@@ -231,7 +383,32 @@ def generate_sample_trajectory():
         quaternion = rotation_matrix_to_quaternion(rotation_matrix)
         quaternions.append(quaternion)
     
-    return positions, np.array(quaternions)
+    return positions, np.array(quaternions), t
+
+def generate_sample_inputs(num_points):
+    """Generate sample inputs for thrusters."""
+    inputs = np.zeros((num_points, 16))
+    
+    # Generate some sample thruster patterns
+    for i in range(num_points):
+        # Make some thrusters active at different times
+        t_norm = i / num_points
+        
+        # X-axis thrusters (0-7)
+        if t_norm < 0.25:
+            inputs[i, 0:2] = 0.5 * np.sin(t_norm * 8 * np.pi)
+        elif t_norm < 0.5:
+            inputs[i, 2:4] = 0.5 * np.sin((t_norm - 0.25) * 8 * np.pi)
+        
+        # Y-axis thrusters (8-11)
+        inputs[i, 8:12] = 0.3 * np.sin(t_norm * 4 * np.pi)
+        
+        # Z-axis thrusters (12-15)
+        if t_norm > 0.5:
+            pattern = np.sin(t_norm * 12 * np.pi)
+            inputs[i, 12:16] = pattern * np.array([0.7, 0.5, 0.7, 0.5])
+    
+    return inputs
 
 def rotation_matrix_to_quaternion(R):
     """Convert a 3x3 rotation matrix to a quaternion [w, x, y, z]."""
@@ -266,7 +443,10 @@ def rotation_matrix_to_quaternion(R):
 
 if __name__ == '__main__':
     # Generate sample trajectory and quaternions
-    positions, quaternions = generate_sample_trajectory()
+    positions, quaternions, time = generate_sample_trajectory()
+    
+    # Generate sample thruster inputs
+    inputs = generate_sample_inputs(len(positions))
     
     # Set box dimensions
     box_dimensions = (0.5, 1.0, 0.5)
@@ -275,8 +455,9 @@ if __name__ == '__main__':
     anim = animate_trajectory(
         positions=positions,
         quaternions=quaternions,
+        time=time,
+        inputs=inputs,
         box_dimensions=box_dimensions,
-        total_time=10.0,
         save_animation=False,
         save_path=None
     )

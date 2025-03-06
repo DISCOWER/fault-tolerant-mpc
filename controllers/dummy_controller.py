@@ -33,7 +33,10 @@ class Controller:
             ndarray: Control input for the system.
         """
         u = np.zeros(self.Nu)
-        u[1] = 0.3
+        u[0] = 1.0
+        u[1] = 1.0
+        u[4] = 1.0
+        u[5] = 1.0
 
         debug = DebugVal(self, time)
         debug.set_state(state)
