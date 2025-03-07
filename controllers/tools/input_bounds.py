@@ -4,6 +4,8 @@ class InputBounds:
     """
     For now: dummy class that gives just "some" input bounds
     """
+    def __init__(self, model):
+        pass
 
     def get_conv_hull(self):
         """

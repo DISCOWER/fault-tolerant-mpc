@@ -8,12 +8,15 @@ import copy
 
 from controllers.tools.control_allocator import ControlAllocator
 from controllers.tools.input_bounds import InputBounds
+from controllers.tools.spiral_parameters import SpiralParameters
 from util.utils import RotCasadi, RotFull, RotFullInv
-from util.get_trajectory import get_trajectory
+from util.get_trajectory import load_trajectory
 from util.controller_debug import ControllerDebug, DebugVal
 
-RobotToCenterRot = Rot3Inv 
-CenterToRobotRot = Rot3
+# RobotToCenterRot = Rot3Inv 
+# CenterToRobotRot = Rot3
+RobotToCenterRot = 1
+CenterToRobotRot = -1
 
 class SpiralingController:
     """
@@ -230,7 +233,7 @@ class SpiralingController:
         Returns:
             ndarray: Trajectory
         """
-        traj = get_trajectory(cmd, self.dt, duration, file_path=fpath)
+        traj = load_trajectory(cmd, self.dt, duration, file_path=fpath)
         self.assign_trajectory(traj)
 
     def assign_trajectory(self, traj):
@@ -248,7 +251,7 @@ class SpiralingController:
         # New traj in form [pos_c, vel_c, omega_c]
 
         omega_des = np.tile(
-            np.array([0,self.spiral_params.omega_des,0]), 
+            self.spiral_params.omega_des, 
             (np.size(original_traj, axis=1),1)
         ).T
 

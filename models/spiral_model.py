@@ -2,6 +2,7 @@ import numpy as np
 import casadi as ca
 
 from models.sys_model import SystemModel, OmegaOperator
+from controllers.tools.spiral_parameters import SpiralParameters
 from util.utils import RotCasadi, Rot, RotInv
 
 class SpiralModel(SystemModel):
@@ -21,13 +22,10 @@ class SpiralModel(SystemModel):
         super().__init__(dt)
 
         self.r = spiral_params.r
-        self.omega_des = spiral_params.omega_des
-        self.virt_force_abs = np.abs(spiral_params.virt_force)
+        # self.omega_des = spiral_params.omega_des
+        # self.virt_force_abs = np.abs(spiral_params.virt_force)
         
         self.spiral_params = spiral_params
-
-
-
         self.set_dynamics()
 
     @classmethod
@@ -60,7 +58,17 @@ class SpiralModel(SystemModel):
 
         dpos_dt = vel
 
-        generalized_force = ca.DM(self.D) @ (u + self.faulty_force.reshape(-1, 1))
+        u_elements = []
+        for i in range(u.size1()):
+            if any(i == bt.index for bt in self.broken_thrusters):
+                u_elements.append(0.0)
+            else:
+                u_elements.append(u[i])
+        
+        # Create a new symbolic vector
+        modified_u = ca.vertcat(*u_elements)
+
+        generalized_force = ca.DM(self.D) @ (modified_u + self.faulty_force.reshape(-1, 1))
         force = generalized_force[0:3]
         torque = generalized_force[3:6]
 

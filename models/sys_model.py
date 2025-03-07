@@ -187,10 +187,20 @@ class SystemModel:
         angular_velocity = x[10:13]
 
         # Unpack control vector
-        for broken_thruster in self.broken_thrusters:
-            u[broken_thruster.index] = 0.0
+        # for broken_thruster in self.broken_thrusters:
+        #     u[broken_thruster.index] = 0.0
 
-        generalised_force = ca.DM(self.D) @ (u + self.faulty_force.reshape(-1, 1))
+        u_elements = []
+        for i in range(u.size1()):
+            if any(i == bt.index for bt in self.broken_thrusters):
+                u_elements.append(0.0)
+            else:
+                u_elements.append(u[i])
+        
+        # Create a new symbolic vector
+        modified_u = ca.vertcat(*u_elements)
+
+        generalised_force = ca.DM(self.D) @ (modified_u + ca.DM(self.faulty_force.reshape(-1, 1)))
 
         force = generalised_force[0:3]
         torque = generalised_force[3:6]
