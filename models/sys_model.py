@@ -3,21 +3,7 @@ import casadi as ca
 
 # from util.utils import Rot, RotInv
 from util.broken_thruster import BrokenThruster
-
-def RotCasadi(q):
-    R = ca.MX.zeros(3, 3)
-    R[0, 0] = q[0]**2 - q[1]**2 - q[2]**2 + q[3]**2
-    R[0, 1] = 2*(q[0]*q[1] + q[2]*q[3])
-    R[0, 2] = 2*(q[0]*q[2] - q[1]*q[3])
-
-    R[1, 0] = 2*(q[0]*q[1] - q[2]*q[3])
-    R[1, 1] = -q[0]**2 + q[1]**2 - q[2]**2 + q[3]**2
-    R[1, 2] = 2*(q[1]*q[2] + q[0]*q[3])
-
-    R[2, 0] = 2*(q[0]*q[2] + q[1]*q[3])
-    R[2, 1] = 2*(q[1]*q[2] - q[0]*q[3])
-    R[2, 2] = -q[0]**2 - q[1]**2 + q[2]**2 + q[3]**2
-    return R
+from util.utils import RotCasadi
 
 def OmegaOperator(omega):
     """
@@ -45,6 +31,14 @@ def OmegaOperator(omega):
 class SystemModel:
     """
     System model for a 3D rigid body using Euler forward discretization.
+
+    System state in form
+        [ 
+            pos         (3x1), global coords
+            vel         (3x1), global coords
+            orientation (4x1), quaternion
+            ang_vel     (3x1), body coords
+        ]
     """
 
     def __init__(self, dt):
@@ -128,6 +122,8 @@ class SystemModel:
 
         self.broken_thrusters = []
         self.faulty_force = np.zeros((1, self.Nu))
+        self.faulty_force_generalized = self.D @ self.faulty_force.flatten()
+        self.u_ub_physical = np.array([self.max_thrust] * self.Nu)
 
         self.set_dynamics()
 
@@ -223,8 +219,11 @@ class SystemModel:
         """
         self.broken_thrusters.append(broken_thruster)
         self.faulty_force = np.zeros(self.Nu)
+        self.u_ub_physical = np.array([self.max_thrust] * self.Nu)
         for thruster in self.broken_thrusters:
             self.faulty_force[thruster.index] = thruster.intensity
+            self.u_ub_physical[thruster.index] = 0.0
+        self.faulty_force_generalized = self.D @ self.faulty_force.flatten()
 
         self.set_dynamics()
 

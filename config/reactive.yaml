@@ -1,0 +1,39 @@
+mode: "reactive" # ignored for now; atm only spiraling implemented
+time_step: 0.1
+traj_shape: "hover"
+# traj_shape: "circle_r_0.65_sPerFullCircle_40"
+traj_duration: 30
+actuator_failures: 
+  - act_id: 1
+    intensity: 1.0
+    start_time: 0
+  - act_id: 2
+    intensity: 0.0
+    start_time: 0
+  - act_id: 3
+    intensity: 1.0
+    start_time: 0
+tuning:
+  nominal:
+    horizon: 20
+    param_set: "P1"
+    P1: 
+      Q: [10.0, 10.0, 10.0, 1.0, 1.0, 0.1]
+      R: [1.0, 1.0, 1.0]
+      R_full: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+      P_mult: 10.0  # P = P_mult * Q
+  spiraling:
+    horizon: 15
+    param_set: "P1"
+    # failsafe_mode: "hold" # "hold" or "continue_trajectory"
+    # failsafe_mode: "hold_center" # "hold" or "continue_trajectory"
+    failsafe_mode: "continue_trajectory" # "hold" or "continue_trajectory"
+    P1:
+      Q: [1, 1, 1, 1, 2]
+      R: [0.1, 0.1, 0.01]
+      P_mult: 1
+      # Attention: The following parameters are only updated if the terminal set is recalculated!
+      k_omega: 1.0
+      max_acceleration: 0.0    
+      time_scaling: 5
+      empc_horizon: 10

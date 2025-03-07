@@ -58,8 +58,12 @@ class DebugVal:
         x = np.array(x).flatten()
         self.desired_position = x[0:3]
         self.desired_velocity = x[3:6]
-        self.desired_orientation = x[6:10]
-        self.desired_angular_velocity = x[10:13]
+        if np.size(x) == 9:
+            self.desired_angular_velocity = x[6:9]
+            self.desired_orientation = np.zeros(4)
+        else:
+            self.desired_orientation = x[6:10]
+            self.desired_angular_velocity = x[10:13]
 
     def calculate_errors(self):
         if self.position is not None and self.desired_position is not None:
