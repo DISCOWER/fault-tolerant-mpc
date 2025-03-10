@@ -1,9 +1,46 @@
 import warnings
 import yaml
 import numpy as np
+from scipy.spatial.transform import Rotation
 
+def euler_traj_to_quat_traj(euler_traj):
+    """
+    Convert a trajectory from euler angles to quaternions.
 
-def load_trajectory(self, action, dt, duration=100, file_path=None):
+    :param euler_traj: trajectory in euler angles
+    :type euler_traj: ndarray
+    :return: trajectory in quaternions
+    :rtype: ndarray
+    """
+    quat_traj = np.zeros((4, euler_traj.shape[1]))
+    for i in range(euler_traj.shape[1]):
+        r = Rotation.from_euler('xyz', euler_traj[:, i])
+        quat_traj[:, i] = r.as_quat()
+
+    return quat_traj
+
+def quat_traj_to_angular_vel(quat_traj, dt):
+    """
+    Calculate the angular velocity from a trajectory of quaternions.
+
+    :param quat_traj: trajectory in quaternions
+    :type quat_traj: ndarray
+    :param dt: time step
+    :type dt: float
+    :return: angular velocity
+    :rtype: ndarray
+    """
+    quat_seq = [Rotation.from_quat(quat) for quat in quat_traj.T]
+    angular_traj = np.zeros((3, quat_traj.shape[1]))
+
+    for i in range(1, quat_traj.shape[1]):
+        r_diff = quat_seq[i-1].inv() * quat_seq[i]
+        rotvec = r_diff.as_rotvec()
+        angular_traj[:, i] = rotvec / dt
+
+    return angular_traj
+
+def load_trajectory(action, dt, duration=100, file_path=None):
     """
     Load a trajectory for the controller to track.
 
@@ -35,79 +72,70 @@ def load_trajectory(self, action, dt, duration=100, file_path=None):
         """
         Get a trajectory for the robot to follow.
         """
-        t = np.arange(0, 10*duration, dt )
+        t = np.arange(0, 10*duration, dt ).reshape(1, -1)
         match form:
             case 'sin':
+                quat_traj = euler_traj_to_quat_traj(np.stack((
+                    np.ones(t.shape)*np.pi/2,   # x rot
+                    np.zeros(t.shape),          # y rot
+                    np.zeros(t.shape)           # z rot
+                )).reshape(3, -1))
+                omega_traj = quat_traj_to_angular_vel(quat_traj, dt)
                 gain = 0.1
-                x_ref = np.stack((
-                            gain*np.sin(t), 
-                            t, 
-                            t, 
-                            gain*np.cos(t), 
-                            np.ones(t.shape), 
-                            np.ones(t.shape)
+                x_ref = np.concatenate((
+                            gain*np.sin(t),     # x
+                            t,                  # y
+                            np.zeros(t.shape),  # z
+                            gain*np.cos(t),     # vx
+                            np.ones(t.shape),   # vy
+                            np.zeros(t.shape),  # vz
+                            quat_traj,
+                            omega_traj
                         ))
                 
             case 'line':
-                x_ref = np.stack((
-                            t, np.zeros(t.shape), np.zeros(t.shape), 
-                            np.ones(t.shape), np.zeros(t.shape), np.zeros(t.shape)
+                x_ref = np.concatenate((
+                            t,                  # pos
+                            np.zeros(t.shape),  
+                            np.zeros(t.shape), 
+                            np.ones(t.shape),   # vel 
+                            np.zeros(t.shape), 
+                            np.zeros(t.shape),
+                            euler_traj_to_quat_traj(np.zeros((3, t.size))),
+                            np.zeros((3, t.size))
                         ))
             case 'point_stabilizing' | 'hover':
                 if 'position' in kwargs:
                     x_pos = kwargs['position']
                 else:
                     x_pos = [0, 0, 0]
-                # x_ref = np.zeros((6, t.shape[0]))
-                x_ref = np.stack((
+                x_ref = np.concatenate((
                     x_pos[0] * np.ones(t.shape),
                     x_pos[1] * np.ones(t.shape),
                     x_pos[2] * np.ones(t.shape),
                     np.zeros(t.shape),
                     np.zeros(t.shape),
-                    np.zeros(t.shape)
-                ))
-            case 'polynomial':
-                gain = 0.5
-                px = [-1.97286583226378e-15, 1.66180981216056e-13, 6.12318911042380e-11, -1.32571002201637e-08, 1.16484944065588e-06, -5.66119580093472e-05, 0.00163003172607062, -0.0276296048987181, 0.257558753061823, -1.11192499745334, 1.51531002733896, 7.20774354733917e-10]
-                py = [3.42808808505018e-08, -6.12608028153846e-06, 0.000402635893116014, -0.0116734662688749, 0.133886381426178, -0.224203064624999, -1.06756190411843e-12]
-                px = [pi * gain for pi in px]
-                py = [pi * gain for pi in py]
-                if duration > 60:
-                    warnings.warn("Polynomial trajectory only gives reasonable results until 60s.")
-                x_ref = np.stack((
-                    np.polyval(px, t),
-                    np.polyval(py, t),
-                    t,
-                    np.polyval([pi * (len(px)-i) for i, pi in enumerate(px[:-1])], t),
-                    np.polyval([pi * (len(py)-i) for i, pi in enumerate(py[:-1])], t),
-                    np.ones_like(t)
-                ))
-            case 'polynomial_old':
-                scale = 0.1
-                x_ref = np.stack((
-                    scale * t * (scale * t-0.6) * (scale * t-2),
-                    -0.5 * scale * t * (0.5*scale * t - 2),
-                    np.zeros_like(t),
-                    3 * scale**3 * t**2 -5.2 * scale**2 * t + scale * 1.2,
-                    -0.5 * scale**2 * t + scale,
-                    np.zeros_like(t)
+                    np.zeros(t.shape),
+                    euler_traj_to_quat_traj(np.zeros((3, t.size))),
+                    np.zeros((3, t.size))
                 ))
             case 'circle':
                 radius = kwargs['radius'] if 'radius' in kwargs else 2
                 sPerRot = kwargs['sPerFullCircle'] if 'sPerFullCircle' in kwargs else 30
                 # full turn every <x>s
                 omega = 2*np.pi/sPerRot 
-                x_ref = np.stack((
-                    radius * np.cos(omega * t),
+                x_ref = np.concatenate((
+                    radius * np.cos(omega * t),          # pos
                     radius * np.sin(omega * t),
                     np.zeros_like(t),
-                    -radius * omega * np.sin(omega * t),
+                    -radius * omega * np.sin(omega * t), # vel
                     radius * omega * np.cos(omega * t),
-                    np.zeros_like(t)
+                    np.zeros_like(t),
+                    euler_traj_to_quat_traj(np.zeros((3, t.size))),
+                    np.zeros((3, t.size))
                 ))
 
-                x_ref += np.array([[-radius], [0], [0], [0], [0], [0]])
+                x_ref += np.array( [-radius] + [0]*12 ).reshape(-1, 1)
             case _:
                 raise ValueError("Invalid form. Use 'sin' or 'line'.")
         return x_ref
@@ -116,8 +144,6 @@ def load_trajectory(self, action, dt, duration=100, file_path=None):
         t = generate_trajectory(duration, dt, form='sin')
     elif action == "generate_line":
         t = generate_trajectory(duration, dt, form='line')
-    elif action == "generate_polynomial":
-        t = generate_trajectory(duration, dt, form='polynomial')
     elif action == "generate_point_stabilizing" or action == "hover":
         t = generate_trajectory(duration, dt, form='point_stabilizing')
     elif 'hover' in action:
@@ -149,10 +175,24 @@ def load_trajectory(self, action, dt, duration=100, file_path=None):
         t = load_trajectory_from_file(file_path, dt)
 
         if duration is not None:
-            if t.shape[1] < (duration)/self.dt:
+            if t.shape[1] < (duration)/dt:
                 raise ValueError(f"Warning: Trajectory is too short: Has only lenth of  " +
-                                    f"{t.shape[1]*self.dt}s, but {duration}s needed.")
+                                    f"{t.shape[1]*dt}s, but {duration}s needed.")
     else:
         raise ValueError(f"Invalid action '{action}'.")
 
     return t
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    dt = 0.1
+    duration = 100
+    for cmd in ['generate_sin', 'generate_line', 'generate_point_stabilizing', 'hover_1_2_3', 'generate_circle', 'circle_r_2_sPerFullCircle_30']:
+        t = load_trajectory(cmd, dt, duration=duration)
+
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+
+        ax.plot3D(t[0, :], t[1, :], t[2, :], 'gray')
+        plt.show()

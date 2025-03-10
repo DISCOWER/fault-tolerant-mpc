@@ -19,16 +19,18 @@ history = ControllerDebug()
 
 # Initialize system model
 model = SystemModel(dt)
-# for failure in params["actuator_failures"]:
-#     if failure["start_time"] != 0:
-#         print("WARNING: Actuator failures are not supported yet at times other than 0. Skipping.")
-#         continue
-#     f = BrokenThruster(failure["act_id"], failure["intensity"])
+for failure in params["actuator_failures"]:
+    if failure["start_time"] != 0:
+        print("WARNING: Actuator failures are not supported yet at times other than 0. Skipping.")
+        continue
+    f = BrokenThruster(failure["act_id"], failure["intensity"])
 
-# # Initialize controller
-# spiral_mpc_params = params["tuning"]["spiraling"]
-# controller = Controller(SpiralModel(model), spiral_mpc_params, history)
-controller = Controller(model, history)
+# Initialize controller
+spiral_mpc_params = params["tuning"]["spiraling"]
+controller = SpiralingController(SpiralModel.from_system_model(model), spiral_mpc_params, history)
+# controller = Controller(model, history)
+
+controller.load_trajectory(params["traj_shape"], sim_duration)
 
 # Set up simulation environment
 sim_env = SimulationEnvironment(model, controller)
@@ -44,7 +46,10 @@ sim_env.set_initial_state(
 sim_env.run_simulation(sim_duration)
 
 # Evaluate results
-history.show_robot_errors()
+# history.show_orbit_errors()
+# history.show_generalized_inputs()
+# history.show_direct_inputs()
+history.export()
 anim = history.animate_3d()
 plt.show()
 

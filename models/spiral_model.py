@@ -19,13 +19,13 @@ class SpiralModel(SystemModel):
     where only the first 9 states are used for control.
     """
     def __init__(self, dt, spiral_params):
-        super().__init__(dt)
-
         self.r = spiral_params.r
         # self.omega_des = spiral_params.omega_des
         # self.virt_force_abs = np.abs(spiral_params.virt_force)
-        
         self.spiral_params = spiral_params
+
+        super().__init__(dt)
+
         self.set_dynamics()
 
     @classmethod
@@ -58,17 +58,7 @@ class SpiralModel(SystemModel):
 
         dpos_dt = vel
 
-        u_elements = []
-        for i in range(u.size1()):
-            if any(i == bt.index for bt in self.broken_thrusters):
-                u_elements.append(0.0)
-            else:
-                u_elements.append(u[i])
-        
-        # Create a new symbolic vector
-        modified_u = ca.vertcat(*u_elements)
-
-        generalized_force = ca.DM(self.D) @ (modified_u + self.faulty_force.reshape(-1, 1))
+        generalized_force = u + self.faulty_force_generalized.reshape(-1, 1)
         force = generalized_force[0:3]
         torque = generalized_force[3:6]
 
@@ -108,13 +98,15 @@ class SpiralModel(SystemModel):
         Returns:
             ca.MX: Center-point state vector
         """
+        x = x.flatten()
+
         omega = x[10:13]
         q = x[6:10]
 
         pos = x[0:3] + RotInv(q) @ self.r
-        vel = x[3:6] + RotInv(q) @ ca.cross(omega, self.r)
+        vel = x[3:6] + RotInv(q) @ np.cross(omega.flatten(), self.r)
 
-        return ca.vertcat(pos, vel, omega, q)
+        return np.concatenate((pos, vel, omega, q))
 
     def center_to_robot(self, c):
         """
@@ -126,14 +118,19 @@ class SpiralModel(SystemModel):
         Returns:
             ca.MX: Full state vector (robot state)
         """
+        x = x.flatten()
+
         omega = c[6:9]
         q = c[9:13]
 
         pos = c[0:3] - Rot(q) @ self.r
-        vel = c[3:6] - Rot(q) @ ca.cross(omega, self.r)
+        vel = c[3:6] - Rot(q) @ np.cross(omega, self.r)
 
-        return ca.vertcat(pos, vel, omega, q)
+        return np.concatenate((pos, vel, q, omega))
 
+    @property
+    def Nu(self):
+        return self.Nu_simplified
 
 """ 
 For later reference:

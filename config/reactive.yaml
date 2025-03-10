@@ -2,7 +2,7 @@ mode: "reactive" # ignored for now; atm only spiraling implemented
 time_step: 0.1
 traj_shape: "hover"
 # traj_shape: "circle_r_0.65_sPerFullCircle_40"
-traj_duration: 30
+traj_duration: 5
 actuator_failures: 
   - act_id: 1
     intensity: 1.0
@@ -29,8 +29,8 @@ tuning:
     # failsafe_mode: "hold_center" # "hold" or "continue_trajectory"
     failsafe_mode: "continue_trajectory" # "hold" or "continue_trajectory"
     P1:
-      Q: [1, 1, 1, 1, 2]
-      R: [0.1, 0.1, 0.01]
+      Q: [1, 1, 1, 1, 1, 1, 2, 2, 2]
+      R: [0.1, 0.1, 0.1, 0.01, 0.01, 0.01]
       P_mult: 1
       # Attention: The following parameters are only updated if the terminal set is recalculated!
       k_omega: 1.0

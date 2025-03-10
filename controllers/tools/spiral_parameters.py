@@ -17,6 +17,9 @@ class SpiralParameters:
         self.faulty_force_generalized = model.faulty_force_generalized.flatten()
         self.D = model.D
 
+        # Rotation from robot local system to force-aligned system
+        self.beta = np.array([0.0, 0.0, 0.0, 1.0])
+
         self.input_bounds = InputBounds(model)
 
         self.calculate_optimal_parameters()
@@ -30,6 +33,7 @@ class SpiralParameters:
         r_dir = np.array([0.0, 1.0, 0.0])
 
         self.f_virt = 1.5  * r_dir
+        self.compensation_force = np.block([self.f_virt, np.zeros(3)]) - self.faulty_force_generalized
 
         self.r = norm(self.f_virt) / (self.mass * norm(self.omega_des)**2) * r_dir
 

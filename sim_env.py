@@ -78,7 +78,7 @@ class SimulationEnvironment:
         x_new = self.model.normalize_quaternion(x_new)
 
         # Update state
-        self.state = x_new
+        self.state = np.array(x_new)
 
         # Update time
         self.cur_time += self.dt

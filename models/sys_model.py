@@ -65,11 +65,12 @@ class SystemModel:
         }
 
         self.Nx = 13
-        self.Nu = 16
+        self.Nu_simplified = 6
+        self.Nu_full = 16
 
         self.dt = dt
 
-        self.D = np.zeros((6, self.Nu))
+        self.D = np.zeros((self.Nu_simplified, self.Nu_full))
         d1 = 0.12 # distance from center to thruster
         d2 = 0.09
 
@@ -121,9 +122,9 @@ class SystemModel:
         self.D[5,11] = -d2
 
         self.broken_thrusters = []
-        self.faulty_force = np.zeros((1, self.Nu))
+        self.faulty_force = np.zeros((1, self.Nu_full))
         self.faulty_force_generalized = self.D @ self.faulty_force.flatten()
-        self.u_ub_physical = np.array([self.max_thrust] * self.Nu)
+        self.u_ub_physical = np.array([self.max_thrust] * self.Nu_full)
 
         self.set_dynamics()
 
@@ -236,6 +237,10 @@ class SystemModel:
         self.faulty_force_generalized = self.D @ self.faulty_force.flatten()
 
         self.set_dynamics()
+
+    @property
+    def Nu(self):
+        return self.Nu_full
 
     
 if __name__ == "__main__":

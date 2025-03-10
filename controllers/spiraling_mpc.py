@@ -11,12 +11,12 @@ from controllers.tools.input_bounds import InputBounds
 from controllers.tools.spiral_parameters import SpiralParameters
 from util.utils import RotCasadi, RotFull, RotFullInv
 from util.get_trajectory import load_trajectory
-from util.controller_debug import ControllerDebug, DebugVal
+from util.controller_debug import ControllerDebug, DebugVal, Logger
 
 # RobotToCenterRot = Rot3Inv 
 # CenterToRobotRot = Rot3
-RobotToCenterRot = 1
-CenterToRobotRot = -1
+RobotToCenterRot = RotFullInv
+CenterToRobotRot = RotFull
 
 class SpiralingController:
     """
@@ -26,13 +26,14 @@ class SpiralingController:
         self.model = model
         self.params = params
         self.debug = debug
+        self.logger = Logger()
 
         self.spiral_params = SpiralParameters(model)
         self.set_model(model)
 
         self.trajectory = None
 
-        self.Nt = self.get_param("horizon")
+        self.Nt = self.params["horizon"]
 
         # Initialize variables
         self.set_cost_functions()
@@ -51,7 +52,7 @@ class SpiralingController:
         self.dt = model.dt
         self.Nx, self.Nu = model.Nx, model.Nu
         # Number of optimized states
-        self.Nopt = self.Nx
+        self.Nopt = 9 # pos, vel, omega uncontrolled: q
 
     def set_cost_functions(self):
         """
@@ -115,6 +116,10 @@ class SpiralingController:
         con_ineq_ub = []
         con_eq.append(opt_var['x', 0] - x0)    
 
+        # Decision variable boundries
+        self.optvar_lb = opt_var(-np.inf)
+        self.optvar_ub = opt_var(np.inf)
+
         # Bounds on x, default is None
         xub = self.params.get("xub", None)
         xlb = self.params.get("xlb", None)
@@ -123,13 +128,16 @@ class SpiralingController:
         ChullMat, ChullVec = self.bounds.get_conv_hull() # A, b
         # But calculate instead in force-aligned system
         beta = self.spiral_params.beta
-        ChullMat = ChullMat @ CenterToRobotRot(beta - np.pi/2)
+        # ChullMat = ChullMat @ CenterToRobotRot(beta - np.pi/2)
+        ChullMat = ChullMat @ CenterToRobotRot(beta)
 
         # Compensating input to get the virtual incontrollable force, not the pysical one
-        u_comp = RobotToCenterRot(beta - np.pi/2) @ self.spiral_params.compensation_force
+        # u_comp = RobotToCenterRot(beta - np.pi/2) @ self.spiral_params.compensation_force
+        u_comp = RobotToCenterRot(beta) @ self.spiral_params.compensation_force
         self.u_comp = u_comp
         # Physical uncontrollable force
-        u_uncontrolled = RobotToCenterRot(beta - np.pi/2) @ self.model.faulty_input_simple.flatten()
+        # u_uncontrolled = RobotToCenterRot(beta - np.pi/2) @ self.model.faulty_input_simple.flatten()
+        u_uncontrolled = RobotToCenterRot(beta) @ self.model.faulty_force_generalized.flatten()
         u_uncontrolled = u_uncontrolled.flatten()
 
         # Generate MPC Problem
@@ -140,7 +148,7 @@ class SpiralingController:
             x_r = x_ref[t*self.Nopt:(t+1)*self.Nopt]
             u_r = u_ref[t*self.Nu:(t+1)*self.Nu]
             # The saved nominal input is not yet corrected for the orientation, correct now...
-            alpha = x_t[5]
+            alpha = x_t[9:13]
             rotInvCa = RotCasadi(alpha).T
             # rot = ca.MX(2,2)
             # rot[0, 0] = ca.cos(alpha)
@@ -255,9 +263,9 @@ class SpiralingController:
             (np.size(original_traj, axis=1),1)
         ).T
 
-        self.trajectory = np.stack((
+        self.trajectory = np.concatenate((
             original_traj[0:6, :],
-            original_traj[10:, :] - omega_des
+            omega_des
         ))
 
         # Calculate the nominal input that realizes this trajectory
@@ -266,13 +274,16 @@ class SpiralingController:
         x = self.trajectory[0:3, :]
         secondDer = np.gradient(np.gradient(x, axis=1), axis=1) / self.dt**2
         # include the mass (not inerita because omega_dot=0)
-        necessary_force = np.vstack((secondDer[0:2, :] * self.mass, np.zeros_like(secondDer)))
+        necessary_force = np.vstack((secondDer * self.mass, np.zeros_like(secondDer)))
+        print(f"necessary_force: {necessary_force.shape}")
         self.nominal_input = necessary_force
 
     def get_control(self, x0, t):
+        # Convert robot state to orbit center state
         c0 = self.model.robot_to_center(x0)
         c0 = np.array(c0).flatten()
 
+        # Prepare the reference trajectory
         x_ref, u_ref = self.get_next_trajectory_part(t)
         self.x_sp = x_ref.reshape(-1, 1, order='F')
         self.u_sp = u_ref.reshape(-1, 1, order='F')
@@ -280,11 +291,12 @@ class SpiralingController:
         # Solve the optimization problem
         c, u, slv_time, cost, slv_status = self.solve_mpc(c0)
 
-        u_nom_alpha_corrected = (RotFullInv(c0[9:13]) @ self.u_sp).flatten()
+        u_nom_alpha_corrected = (RotFullInv(c0[9:13]) @ self.u_sp[0:self.Nu]).flatten()
         u_res = np.array(u[0]).flatten() + u_nom_alpha_corrected + self.u_comp
         
         beta = self.spiral_params.beta
-        u_res = CenterToRobotRot(beta - np.pi/2) @ u_res
+        # u_res = CenterToRobotRot(beta - np.pi/2) @ u_res
+        u_res = CenterToRobotRot(beta) @ u_res
         u_phys = self.contr_alloc.get_physical_input(u_res)
 
         debug = DebugVal(self, t)
@@ -301,12 +313,13 @@ class SpiralingController:
         solver_start = time.time()
         self.optvar_x0 = np.full((1, self.Nx), x0.T)
 
-        # initialize variables
-        # Initial guess of the warm start variables
+        # Initialize variables
         if self.optimal_solution is not None:
+            # Initial guess of the warm start variables
             self.optvar_init['x'] = self.optimal_solution['x'][1:] + [ca.DM([0] * self.Nx)]
             self.optvar_init['u'] = self.optimal_solution['u'][1:] + [ca.DM([0] * self.Nu)]
         else:
+            # Initialize with zero if no previous solution is available
             self.optvar_init = self.opt_var(0)
         self.optvar_init['x', 0] = self.optvar_x0[0]
 
@@ -330,11 +343,12 @@ class SpiralingController:
 
         return optvar['x'], optvar['u'], slv_time, float(sol['f']), status
 
-    def get_next_trajectory_part(self, id_s):
+    def get_next_trajectory_part(self, t):
         """
         Get the next points in the trajectory that lies within the prediction horizon.
         """
-        id_e = id_s + self.Nt
+        id_s = int(t / self.dt)
+        id_e = id_s + self.Nt + 1
         x_r = self.trajectory[:, id_s:id_e]
         u_r = self.nominal_input[:, id_s:id_e]
 
