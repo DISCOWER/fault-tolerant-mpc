@@ -171,9 +171,6 @@ class ControllerDebug:
 
         fig, ax = plt.subplots(3, 2)
         for i in range(3):
-            print(i)
-            print(position_errors[:, i])
-
             ax[i, 0].plot(time, position_errors[:, i])
             ax[i, 0].set_title(f"{description} Position Error {i}")
 
@@ -203,15 +200,18 @@ class ControllerDebug:
 
             plt.tight_layout()
 
-    def animate_3d(self):
+    def animate_3d(self, model):
         position = [h.position for h in self.history]
         orientation = [h.orientation for h in self.history]
         input = [h.input for h in self.history]
+        faulty_inputs = [h.faulty_force for h in self.history]
 
         animate_trajectory(positions=position, 
                            quaternions=orientation, 
                            time=self.get_time(), 
-                           inputs=input)
+                           inputs=input,
+                           faulty_inputs=faulty_inputs,
+                           model=model)
 
     def export(self, file_path="./data/debug_data"):
         """ Export data to CSV file """

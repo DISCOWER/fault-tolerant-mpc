@@ -77,7 +77,7 @@ class SpiralingController:
 
         # Calculate terminal cost
         # self.terminal_cost = 0
-        print("WARNING: Terminal cost is not set yet")
+        self.logger.warn("Terminal cost is not set yet")
 
     def build_solver(self):
         build_solver_start = time.time()
@@ -275,7 +275,6 @@ class SpiralingController:
         secondDer = np.gradient(np.gradient(x, axis=1), axis=1) / self.dt**2
         # include the mass (not inerita because omega_dot=0)
         necessary_force = np.vstack((secondDer * self.mass, np.zeros_like(secondDer)))
-        print(f"necessary_force: {necessary_force.shape}")
         self.nominal_input = necessary_force
 
     def get_control(self, x0, t):
@@ -303,7 +302,7 @@ class SpiralingController:
         debug.set_state(x0)
         debug.set_circle_state(c0)
         debug.set_input(u_phys, self.model)
-        debug.set_desired_state(self.x_sp[:, 0])
+        debug.set_desired_state(self.x_sp[0:self.Nopt, 0])
         debug.calculate_errors()
         self.debug.add_debug_val(debug)
 

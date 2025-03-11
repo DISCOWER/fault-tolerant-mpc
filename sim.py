@@ -24,10 +24,12 @@ for failure in params["actuator_failures"]:
         print("WARNING: Actuator failures are not supported yet at times other than 0. Skipping.")
         continue
     f = BrokenThruster(failure["act_id"], failure["intensity"])
+    model.set_fault(f)
 
 # Initialize controller
 spiral_mpc_params = params["tuning"]["spiraling"]
-controller = SpiralingController(SpiralModel.from_system_model(model), spiral_mpc_params, history)
+spiral_model = SpiralModel.from_system_model(model)
+controller = SpiralingController(spiral_model, spiral_mpc_params, history)
 # controller = Controller(model, history)
 
 controller.load_trajectory(params["traj_shape"], sim_duration)
@@ -50,7 +52,7 @@ sim_env.run_simulation(sim_duration)
 # history.show_generalized_inputs()
 # history.show_direct_inputs()
 history.export()
-anim = history.animate_3d()
+anim = history.animate_3d(spiral_model)
 plt.show()
 
 """

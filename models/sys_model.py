@@ -73,6 +73,7 @@ class SystemModel:
         self.D = np.zeros((self.Nu_simplified, self.Nu_full))
         d1 = 0.12 # distance from center to thruster
         d2 = 0.09
+        d3 = 0.05
 
         # force, x-direction
         self.D[0, 0] = -1
@@ -99,14 +100,14 @@ class SystemModel:
         self.D[3,14] =  d1
         self.D[3,15] = -d1
         # torque, y-direction
-        self.D[4, 0] = -d1
-        self.D[4, 1] =  d1
-        self.D[4, 2] =  d1
-        self.D[4, 3] = -d1
-        self.D[4, 4] = -d1
-        self.D[4, 5] =  d1
-        self.D[4, 6] =  d1
-        self.D[4, 7] = -d1
+        self.D[4, 0] = -d3
+        self.D[4, 1] =  d3
+        self.D[4, 2] =  d3
+        self.D[4, 3] = -d3
+        self.D[4, 4] = -d3
+        self.D[4, 5] =  d3
+        self.D[4, 6] =  d3
+        self.D[4, 7] = -d3
         # torque, z-direction
         self.D[5, 0] =  d1
         self.D[5, 1] =  d1
@@ -120,6 +121,9 @@ class SystemModel:
         self.D[5, 9] =  d2
         self.D[5,10] =  d2
         self.D[5,11] = -d2
+
+        # np.set_printoptions(linewidth=250)
+        # print(self.D)
 
         self.broken_thrusters = []
         self.faulty_force = np.zeros((1, self.Nu_full))
@@ -229,10 +233,10 @@ class SystemModel:
             broken_thruster (BrokenThruster): BrokenThruster object
         """
         self.broken_thrusters.append(broken_thruster)
-        self.faulty_force = np.zeros(self.Nu)
-        self.u_ub_physical = np.array([self.max_thrust] * self.Nu)
+        self.faulty_force = np.zeros(self.Nu_full)
+        self.u_ub_physical = np.array([self.max_thrust] * self.Nu_full)
         for thruster in self.broken_thrusters:
-            self.faulty_force[thruster.index] = thruster.intensity
+            self.faulty_force[thruster.index] = thruster.intensity * self.max_thrust
             self.u_ub_physical[thruster.index] = 0.0
         self.faulty_force_generalized = self.D @ self.faulty_force.flatten()
 
