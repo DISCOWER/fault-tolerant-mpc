@@ -4,7 +4,7 @@ from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-def animate_trajectory(positions, quaternions, time, inputs=None, faulty_inputs=None, model=None,
+def animate_trajectory(history, time, model=None,
                        box_dimensions=(0.15, 0.15, 0.15), 
                        save_animation=False, save_path=None):
     """
@@ -35,12 +35,22 @@ def animate_trajectory(positions, quaternions, time, inputs=None, faulty_inputs=
     anim : FuncAnimation
         The animation object.
     """
+    positions = [h.position for h in history]
+    quaternions = [h.orientation for h in history]
+    inputs = [h.input for h in history]
+    faulty_inputs = [h.faulty_force for h in history]
+    desired_trajectory = [h.desired_position for h in history]
+
     # Convert inputs to numpy arrays if they aren't already
     positions = np.array(positions)
     # Calculates internally with [w, x, y, z] quaternions instead of [x, y, z, w]
     quaternions = np.array(quaternions)
     quaternions = np.roll(quaternions, 1, axis=1)
     num_frames = len(positions)
+    
+    # Convert desired trajectory to numpy array
+    if desired_trajectory is not None:
+        desired_trajectory = np.array(desired_trajectory)
     
     # Check if inputs are provided
     if inputs is None:
@@ -99,10 +109,6 @@ def animate_trajectory(positions, quaternions, time, inputs=None, faulty_inputs=
 
     for i in range(16):
         print(np.cross(thruster_positions[i], thruster_directions[i]))
-
-    # thruster_positions = {
-    #      1: ()
-    # }
     
     # Create time stamps
     t = time
@@ -126,6 +132,10 @@ def animate_trajectory(positions, quaternions, time, inputs=None, faulty_inputs=
     
     # Variable to store current thruster arrows
     thruster_arrows = []
+    
+    # Add elements for desired setpoint and center point trajectory
+    desired_setpoint, = ax.plot([], [], [], 'ro', markersize=6, label='Desired Setpoint')
+    center_point_trajectory, = ax.plot([], [], [], 'k--', linewidth=2, alpha=0.7, label='Center Point Trajectory')
     
     # Function to create a box with proper orientation using quaternions
     def create_box(center, dimensions, quaternion):
@@ -196,12 +206,23 @@ def animate_trajectory(positions, quaternions, time, inputs=None, faulty_inputs=
 
     # Create artists for center point
     center_point, = ax.plot([], [], [], 'k--', linewidth=2)
+    
+    # Store center point positions for trajectory
+    center_point_positions = []
 
     # Initialize animation
     def init():
         trajectory_line.set_data([], [])
         trajectory_line.set_3d_properties([])
         time_text.set_text('')
+        
+        # Initialize desired setpoint
+        desired_setpoint.set_data([], [])
+        desired_setpoint.set_3d_properties([])
+        
+        # Initialize center point trajectory
+        center_point_trajectory.set_data([], [])
+        center_point_trajectory.set_3d_properties([])
         
         nonlocal current_cube
         if current_cube is not None:
@@ -225,7 +246,8 @@ def animate_trajectory(positions, quaternions, time, inputs=None, faulty_inputs=
         center_point.set_data([], [])
         center_point.set_3d_properties([])
         
-        return [trajectory_line, time_text, local_x_arrow, local_y_arrow, local_z_arrow, center_point] + thruster_arrows
+        return [trajectory_line, time_text, desired_setpoint, center_point_trajectory, 
+                local_x_arrow, local_y_arrow, local_z_arrow, center_point] + thruster_arrows
     
     # Animation update function
     def update(frame):
@@ -318,24 +340,51 @@ def animate_trajectory(positions, quaternions, time, inputs=None, faulty_inputs=
         local_y_arrow.set_alpha(0.5)
         local_z_arrow.set_alpha(0.5)
 
-        # Update center point
+        # Update center point and its trajectory
+        center_pt_position = None
         if model is not None:
             rotated_c = np.dot(model.spiral_params.r, rotation_matrix.T)
-            center_point.set_data([pos[0], pos[0] + rotated_c[0]],
-                                    [pos[1], pos[1] + rotated_c[1]])
-            center_point.set_3d_properties([pos[2], pos[2] + rotated_c[2]])
+            center_pt_position = pos + rotated_c
+            center_point.set_data([pos[0], center_pt_position[0]],
+                                  [pos[1], center_pt_position[1]])
+            center_point.set_3d_properties([pos[2], center_pt_position[2]])
             center_point.set_alpha(1.0)
+            
+            # Add current center point position to trajectory
+            if frame > 0:  # Only add if we're past the first frame
+                # Only add the position if we haven't seen this frame before
+                if len(center_point_positions) <= frame:
+                    center_point_positions.append(center_pt_position)
+                
+                # Update center point trajectory - only show up to current frame
+                if center_point_positions:
+                    cp_trajectory = np.array(center_point_positions)
+                    center_point_trajectory.set_data(cp_trajectory[:, 0], cp_trajectory[:, 1])
+                    center_point_trajectory.set_3d_properties(cp_trajectory[:, 2])
         else:
             center_point.set_alpha(0.0)
+            
+        # Update desired setpoint visualization
+        if desired_trajectory is not None:
+            desired_pos = desired_trajectory[frame]
+            desired_setpoint.set_data([desired_pos[0]], [desired_pos[1]])
+            desired_setpoint.set_3d_properties([desired_pos[2]])
+            desired_setpoint.set_alpha(1.0)
 
         # Update time
         time_text.set_text(f'Time: {t[frame]:.2f}s')
         
-        return [trajectory_line, time_text, current_cube, center_point] + thruster_arrows
+        return [trajectory_line, time_text, current_cube, center_point, center_point_trajectory, 
+                desired_setpoint] + thruster_arrows
     
     # Create the animation
     anim = FuncAnimation(fig, update, frames=num_frames, init_func=init,
                         interval=int(total_time*1000/num_frames), blit=False)
+    
+    # Add a legend
+    handles = [trajectory_line, center_point_trajectory, desired_setpoint]
+    labels = ['Trajectory', 'Center Point Trajectory', 'Desired Setpoint']
+    ax.legend(handles=handles, labels=labels, loc='upper right')
     
     # Save the animation if requested
     if save_animation:

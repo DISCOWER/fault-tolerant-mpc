@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import yaml
+from scipy.spatial.transform import Rotation as R
 
 from sim_env import SimulationEnvironment
 from models.sys_model import SystemModel
@@ -40,7 +41,7 @@ sim_env = SimulationEnvironment(model, controller)
 sim_env.set_initial_state(
     position=[0,0,0],
     velocity=[0,0,0],
-    orientation=[0,0,0,1],
+    orientation=R.from_euler("zyx", [20,30,10], degrees=True).as_quat(),
     angular_velocity=[0,0,0]
 )
 
@@ -59,7 +60,7 @@ plt.show()
 Todo:
 - [ ] write controller
     - [ ] spiral parameters
-    - [ ] input bounds -> replace with real implementation
+    - [x] input bounds -> replace with real implementation
     - [x] control allocator
 
     - [x] set cost functions

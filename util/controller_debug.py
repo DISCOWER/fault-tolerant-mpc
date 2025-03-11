@@ -206,11 +206,10 @@ class ControllerDebug:
         input = [h.input for h in self.history]
         faulty_inputs = [h.faulty_force for h in self.history]
 
-        animate_trajectory(positions=position, 
-                           quaternions=orientation, 
+        # animate_trajectory(positions=position, 
+        #                    quaternions=orientation, 
+        animate_trajectory(history=self.history, 
                            time=self.get_time(), 
-                           inputs=input,
-                           faulty_inputs=faulty_inputs,
                            model=model)
 
     def export(self, file_path="./data/debug_data"):
