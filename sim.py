@@ -30,6 +30,13 @@ for failure in params["actuator_failures"]:
 # Initialize controller
 spiral_mpc_params = params["tuning"]["spiraling"]
 spiral_model = SpiralModel.from_system_model(model)
+
+# b = spiral_model.spiral_params.input_bounds.conv_hull
+# from util.polytope import MyPolytope
+# import matplotlib.pyplot as plt
+# MyPolytope(b.A[:,0:3], b.b).plot()
+# plt.show()
+
 controller = SpiralingController(spiral_model, spiral_mpc_params, history)
 # controller = Controller(model, history)
 

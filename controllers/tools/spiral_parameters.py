@@ -21,7 +21,6 @@ class SpiralParameters:
         self.beta = np.array([0.0, 0.0, 0.0, 1.0])
 
         self.input_bounds = InputBounds(model)
-
         self.calculate_optimal_parameters()
 
     def calculate_optimal_parameters(self):
@@ -32,10 +31,28 @@ class SpiralParameters:
         self.omega_des = np.array([0.0, 0.0, 0.5])
         r_dir = np.array([0.0, 1.0, 0.0])
 
-        self.f_virt = 1.5  * r_dir
+        self.f_virt = 3.5  * r_dir
         self.compensation_force = np.block([self.f_virt, np.zeros(3)]) - self.faulty_force_generalized
 
         self.r = norm(self.f_virt) / (self.mass * norm(self.omega_des)**2) * r_dir
+
+        # TODO attention: This is the inertia matrix in the local robot frame, not necessarily in 
+        # the force-aligned frame! 
+        j00 = self.inertia[0,0]
+        j22 = self.inertia[2,2]
+        rr = np.linalg.norm(self.r)
+        inertia_inv = np.linalg.inv(self.inertia)
+
+        m_helper = np.array([
+            [0.0   , 0.0, -rr/j22],
+            [0.0   , 0.0, 0.0        ],
+            [rr/j00, 0.0, 0.0        ]
+        ])
+
+        self.M = np.block([
+            [1/self.mass * np.eye(3), m_helper],
+            [np.zeros((3,3)), inertia_inv]
+        ])
 
     def __str__(self):
         return f"+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"+ "\n" \

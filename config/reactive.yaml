@@ -30,7 +30,8 @@ tuning:
       R: [0.1, 0.1, 0.1, 0.01, 0.01, 0.01]
       P_mult: 1
       # Attention: The following parameters are only updated if the terminal set is recalculated!
-      k_omega: 1.0
-      max_acceleration: 0.0    
+      k_omega: [1.0, 1.0, 1.0]
+      max_acceleration: 0.0
       time_scaling: 5
-      empc_horizon: 10
+      # empc_horizon: 10
+      empc_horizon: 3

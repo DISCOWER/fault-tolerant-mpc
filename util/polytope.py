@@ -335,6 +335,11 @@ class MyPolytope:
         ax.plot([0,0], [min(y), max(y)], [0,0], "k", alpha=0.8)
         ax.plot([0,0], [0,0], [min(z), max(z)], "k", alpha=0.8)
 
+        # axis labels
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+
         if 'title' in kwargs:
             ax.set_title(kwargs['title'])
         else:

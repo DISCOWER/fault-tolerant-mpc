@@ -65,6 +65,7 @@ class InputBounds:
 
         # Calculate the convex hull from the resulting forces
         self.vertices = np.array(vertices)
+        self.vertices = np.unique(self.vertices, axis=0)
         c_hull = ConvexHull(self.vertices)
 
         # Scipy finds a loooot of identical equations; so simplify
