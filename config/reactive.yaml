@@ -2,7 +2,9 @@ mode: "reactive" # ignored for now; atm only spiraling implemented
 time_step: 0.1
 traj_shape: "hover"
 # traj_shape: "circle_r_0.65_sPerFullCircle_40"
-traj_duration: 50
+traj_duration: 30
+# traj_duration: 150
+# traj_duration: 20
 actuator_failures: 
   - act_id: 10
     intensity: 1.0
@@ -33,5 +35,5 @@ tuning:
       k_omega: [1.0, 1.0, 1.0]
       max_acceleration: 0.0
       time_scaling: 5
-      # empc_horizon: 10
+      # empc_horizon: 15
       empc_horizon: 3

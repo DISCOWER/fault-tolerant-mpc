@@ -9,6 +9,7 @@ import copy
 from controllers.tools.control_allocator import ControlAllocator
 from controllers.tools.input_bounds import InputBounds
 from controllers.tools.spiral_parameters import SpiralParameters
+from controllers.tools.terminal_ingredients import load_terminal_ingredients
 from util.utils import RotCasadi, RotFull, RotFullInv
 from util.get_trajectory import load_trajectory
 from util.controller_debug import ControllerDebug, DebugVal, Logger
@@ -76,8 +77,11 @@ class SpiralingController:
         self.running_cost = ca.Function('ln', [x, xr, Q, u, R], [ln])
 
         # Calculate terminal cost
-        # self.terminal_cost = 0
-        self.logger.warn("Terminal cost is not set yet")
+        self.terminal_cost, self.terminal_set = load_terminal_ingredients("./terminal.yaml")
+
+        e = ca.MX.sym("e", 9)
+        # print(self.terminal_cost(*ca.vertsplit(e)))
+        # breakpoint()
 
     def build_solver(self):
         build_solver_start = time.time()
@@ -186,15 +190,15 @@ class SpiralingController:
         x_t = opt_var['x', self.Nt]
         x_r = x_ref[self.Nt*self.Nopt:(self.Nt+1)*self.Nopt]
 
-        # # Terminal Cost
-        # e_N = x_t[0:self.Nopt] - x_r
-        # obj += self.terminal_cost(*ca.vertsplit(e_N))
+        # Terminal Cost
+        e_N = x_t[0:self.Nopt] - x_r
+        obj += self.terminal_cost(*ca.vertsplit(e_N))
 
-        # # Terminal Constraint
-        # con_t = self.terminal_constraint
-        # con_ineq.append(ca.mtimes(con_t.A, e_N))
-        # con_ineq_lb.append(-ca.inf * np.ones_like(con_t.b))
-        # con_ineq_ub.append(con_t.b)
+        # Terminal Constraint
+        con_t = self.terminal_set
+        con_ineq.append(ca.mtimes(con_t.A, e_N))
+        con_ineq_lb.append(-ca.inf * np.ones_like(con_t.b))
+        con_ineq_ub.append(con_t.b)
 
         # Equality constraints are reformulated as inequality constraints with 0<=g(x)<=0
         # -> Refer to CasADi documentation: NLP solver only accepts inequality constraints
@@ -211,7 +215,9 @@ class SpiralingController:
         # Build NLP Solver (can also solve QP)
         nlp = dict(x=opt_var, f=obj, g=con, p=param_s)
         options = { # maybe use jit compiler?
+            # 'ipopt.print_level': 5,
             'ipopt.print_level': 0,
+            'ipopt.tol': 1e-3,
             'print_time': False,
             'verbose': False,
             'expand': True

@@ -28,7 +28,9 @@ class SpiralParameters:
         Calculate the optimal parameters for the micro-orbit based on the current system failure state.
         """
         # "hard-code" the values for now
-        self.omega_des = np.array([0.0, 0.0, 0.5])
+        # self.omega_des = np.array([0.0, 0.0, 0.5])
+        # self.omega_des = np.array([0.0, 0.0, 0.4])
+        self.omega_des = np.array([0.0, 0.0, 0.6])
         r_dir = np.array([0.0, 1.0, 0.0])
 
         self.f_virt = 3.5  * r_dir
