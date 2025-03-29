@@ -5,6 +5,7 @@ import time
 import random
 import pprint
 import copy
+from pathlib import Path
 
 from ft_mpc.controllers.tools.control_allocator import ControlAllocator
 from ft_mpc.controllers.tools.input_bounds import InputBounds
@@ -77,7 +78,7 @@ class SpiralingController:
         self.running_cost = ca.Function('ln', [x, xr, Q, u, R], [ln])
 
         # Calculate terminal cost
-        self.terminal_cost, self.terminal_set = load_terminal_ingredients("./ft_mpc/config/terminal.yaml")
+        self.terminal_cost, self.terminal_set = load_terminal_ingredients(str(Path(__file__).absolute().parent) + "/../config/terminal.yaml")
 
         e = ca.MX.sym("e", 9)
         # print(self.terminal_cost(*ca.vertsplit(e)))
