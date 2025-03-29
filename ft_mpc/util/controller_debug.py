@@ -2,6 +2,7 @@ import numpy as np
 import casadi as ca
 import matplotlib.pyplot as plt
 import copy
+from pathlib import Path
 
 from ft_mpc.util.animate import animate_trajectory
 
@@ -212,7 +213,7 @@ class ControllerDebug:
                            time=self.get_time(),
                            model=model)
 
-    def export(self, file_path="./data/debug_data"):
+    def export(self, file_path=str(Path(__file__).absolute().parent) + "/../../data/debug_data"):
         """ Export data to CSV file """
         h = self.history[0]
         example = np.concatenate((

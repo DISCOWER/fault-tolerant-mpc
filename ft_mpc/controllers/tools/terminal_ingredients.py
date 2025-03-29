@@ -478,6 +478,6 @@ if __name__ == "__main__":
 
     code = terminal.get_terminal_cost()
     term_set = terminal.terminal_set
-    store_terminal_ingredients(code, term_set, "terminal.yaml")
+    store_terminal_ingredients(code, term_set, str(Path(__file__).absolute().parent) + "/../../config/terminal.yaml")
 
 

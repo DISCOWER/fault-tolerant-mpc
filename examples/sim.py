@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import yaml
 from scipy.spatial.transform import Rotation as R
+from pathlib import Path
 
 from ft_mpc.simulation.sim_env import SimulationEnvironment
 from ft_mpc.models.sys_model import SystemModel
@@ -12,7 +13,7 @@ from ft_mpc.util.broken_thruster import BrokenThruster
 from ft_mpc.util.controller_debug import ControllerDebug
 
 # Prepare parameters
-params = yaml.safe_load(open("ft_mpc/config/reactive.yaml"))  #! Add proper path handling
+params = yaml.safe_load(open(str(Path(__file__).absolute().parent) + "/../ft_mpc/config/reactive.yaml"))  #! Add proper path handling
 dt = params["time_step"]
 sim_duration = params["traj_duration"]
 
