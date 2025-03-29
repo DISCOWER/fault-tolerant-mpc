@@ -3,7 +3,7 @@
 In this package we provide the source for the article "Fault-Tolerant Model Predictive Control for Spacecraft" R. Stockner, P. Roque, M. Charitidou, and Dimos V. Dimarogonas.
 
 ## Running the demo
-This package relies on [Python Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) nad **Python 3.10 or 3.12**. After making sure that Python Poetry is correctly installed, following commands:
+This package relies on [Python Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) and **Python 3.10 or 3.12**. After making sure that Python Poetry is correctly installed, following commands:
 
 1. Clone the repository:
 ```bash
