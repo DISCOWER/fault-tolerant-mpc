@@ -1,3 +1,5 @@
+https://github.com/user-attachments/assets/1233ae1e-a9e8-4787-b77b-609ad5c37aaf
+
 # Fault-Tolerant Model Predictive Control for Spacecraft
 
 In this package we provide the source for the article "Fault-Tolerant Model Predictive Control for Spacecraft" R. Stockner, P. Roque, M. Charitidou, and Dimos V. Dimarogonas.
@@ -25,6 +27,10 @@ poetry install
 ```bash
 poetry run python examples/sim.py
 ```
+
+## ROS 2 Demonstration
+
+A ROS 2 demonstration using KTH's [ATMOS](https://atmos.discower.io) platform will be provided soon!
 
 ## Citing this work
 To cite this work, please use the following BibTeX entry:
