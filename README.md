@@ -17,7 +17,7 @@ poetry config virtualenvs.in-project true
 
 2. Install the `ft_mpc` library:
 ```bash
-cd ft_mpc
+cd fault-tolerant-mpc
 poetry install
 ```
 
