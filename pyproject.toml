@@ -3,6 +3,7 @@ name = "ft_mpc"
 version = "0.1.0"
 description = "Fault-tolerant MPC for actuation failure in spacecraft."
 authors = [
+    {name = "raphael-jms",email = "stockner@kth.se"},
     {name = "Pedro-Roque",email = "padr@kth.se"}
 ]
 readme = "README.md"
