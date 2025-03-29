@@ -3,7 +3,7 @@ from itertools import product
 from scipy.spatial import ConvexHull
 import time
 
-from util.polytope import MyPolytope
+from ft_mpc.util.polytope import MyPolytope
 
 class InputBounds:
     """
@@ -17,7 +17,7 @@ class InputBounds:
 
     def get_conv_hull(self):
         """
-        Gives back the convex hull of the possible resulting forces and torques that can be 
+        Gives back the convex hull of the possible resulting forces and torques that can be
         applied. These are calculated based on the uncontrollable force of the model.
 
         :return: Matrix A and vector b of the convex hull
@@ -58,7 +58,7 @@ class InputBounds:
         list_of_input_forces = list(product(*min_max))
 
         # Calculate resulting generalized force (force+torque)
-        vertices = [] 
+        vertices = []
         for input_force in list_of_input_forces:
             res_f = np.matmul(self.model.D, np.array(input_force))
             vertices.append(res_f)

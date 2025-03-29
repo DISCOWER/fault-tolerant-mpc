@@ -2,7 +2,7 @@ import numpy as np
 from numpy.linalg import norm
 import cvxpy as cp
 
-from controllers.tools.input_bounds import InputBounds
+from ft_mpc.controllers.tools.input_bounds import InputBounds
 
 class SpiralParameters:
     """
@@ -38,8 +38,8 @@ class SpiralParameters:
 
         self.r = norm(self.f_virt) / (self.mass * norm(self.omega_des)**2) * r_dir
 
-        # TODO attention: This is the inertia matrix in the local robot frame, not necessarily in 
-        # the force-aligned frame! 
+        # TODO attention: This is the inertia matrix in the local robot frame, not necessarily in
+        # the force-aligned frame!
         j00 = self.inertia[0,0]
         j22 = self.inertia[2,2]
         rr = np.linalg.norm(self.r)

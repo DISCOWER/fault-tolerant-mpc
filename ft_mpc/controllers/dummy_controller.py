@@ -1,7 +1,7 @@
 import numpy as np
 import casadi as ca
 
-from util.controller_debug import ControllerDebug, DebugVal
+from ft_mpc.util.controller_debug import ControllerDebug, DebugVal
 
 class Controller:
     """

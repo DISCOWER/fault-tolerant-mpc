@@ -1,11 +1,11 @@
 .vscode/*
 *.pyc
 **/__pycache__/
-**/data/
 **/.bash_history
 **/.cache/
 **/.config/
 **/.local/
 **/.pki/
 **/snap/
-
+data/**
+!data/.gitkeep

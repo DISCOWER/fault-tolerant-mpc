@@ -6,15 +6,15 @@ import random
 import pprint
 import copy
 
-from controllers.tools.control_allocator import ControlAllocator
-from controllers.tools.input_bounds import InputBounds
-from controllers.tools.spiral_parameters import SpiralParameters
-from controllers.tools.terminal_ingredients import load_terminal_ingredients
-from util.utils import RotCasadi, RotFull, RotFullInv
-from util.get_trajectory import load_trajectory
-from util.controller_debug import ControllerDebug, DebugVal, Logger
+from ft_mpc.controllers.tools.control_allocator import ControlAllocator
+from ft_mpc.controllers.tools.input_bounds import InputBounds
+from ft_mpc.controllers.tools.spiral_parameters import SpiralParameters
+from ft_mpc.util.utils import RotCasadi, RotFull, RotFullInv
+from ft_mpc.controllers.tools.terminal_ingredients import load_terminal_ingredients
+from ft_mpc.util.get_trajectory import load_trajectory
+from ft_mpc.util.controller_debug import ControllerDebug, DebugVal, Logger
 
-# RobotToCenterRot = Rot3Inv 
+# RobotToCenterRot = Rot3Inv
 # CenterToRobotRot = Rot3
 RobotToCenterRot = RotFullInv
 CenterToRobotRot = RotFull
@@ -77,7 +77,7 @@ class SpiralingController:
         self.running_cost = ca.Function('ln', [x, xr, Q, u, R], [ln])
 
         # Calculate terminal cost
-        self.terminal_cost, self.terminal_set = load_terminal_ingredients("./terminal.yaml")
+        self.terminal_cost, self.terminal_set = load_terminal_ingredients("./config/terminal.yaml")
 
         e = ca.MX.sym("e", 9)
         # print(self.terminal_cost(*ca.vertsplit(e)))
@@ -118,7 +118,7 @@ class SpiralingController:
         con_ineq = []
         con_ineq_lb = []
         con_ineq_ub = []
-        con_eq.append(opt_var['x', 0] - x0)    
+        con_eq.append(opt_var['x', 0] - x0)
 
         # Decision variable boundries
         self.optvar_lb = opt_var(-np.inf)
@@ -160,14 +160,14 @@ class SpiralingController:
             # rot[1, 0] = -ca.sin(alpha)
             # rot[1, 1] = ca.cos(alpha)
             u_r = ca.vcat([
-                ca.mtimes(rotInvCa, u_r[0:3]), 
+                ca.mtimes(rotInvCa, u_r[0:3]),
                 u_r[3:6]
             ])
 
             u_t = opt_var['u', t]
 
             # Dynamics constraint
-            x_t_next = self.dynamics(x_t, u_t + u_r + u_comp) 
+            x_t_next = self.dynamics(x_t, u_t + u_r + u_comp)
             con_eq.append(x_t_next - opt_var['x', t + 1])
 
             # Input constraints
@@ -244,7 +244,7 @@ class SpiralingController:
             cmd (str): Action to perform, see file util/get_trajectory.py for details
             duration (int): Duration of the trajectory
             fpath (str): Path to the trajectory file, defaults to None
-        
+
         Returns:
             ndarray: Trajectory
         """
@@ -253,20 +253,20 @@ class SpiralingController:
 
     def assign_trajectory(self, traj):
         """
-        Assign a trajectory to the controller. Also calculates the necessary inputs to realize this 
+        Assign a trajectory to the controller. Also calculates the necessary inputs to realize this
         trajectory.
 
         Args:
             traj (ndarray): Trajectory to assign
         """
-        # Prolong the trajectory to prevent the controller from running out of points 
+        # Prolong the trajectory to prevent the controller from running out of points
         original_traj = np.hstack((traj, np.tile(traj[:, -1:], (1, self.Nt))))
 
         # Original traj in the form [pos, vel, q, omega]
         # New traj in form [pos_c, vel_c, omega_c]
 
         omega_des = np.tile(
-            self.spiral_params.omega_des, 
+            self.spiral_params.omega_des,
             (np.size(original_traj, axis=1),1)
         ).T
 
@@ -293,13 +293,13 @@ class SpiralingController:
         x_ref, u_ref = self.get_next_trajectory_part(t)
         self.x_sp = x_ref.reshape(-1, 1, order='F')
         self.u_sp = u_ref.reshape(-1, 1, order='F')
-        
+
         # Solve the optimization problem
         c, u, slv_time, cost, slv_status = self.solve_mpc(c0)
 
         u_nom_alpha_corrected = (RotFullInv(c0[9:13]) @ self.u_sp[0:self.Nu]).flatten()
         u_res = np.array(u[0]).flatten() + u_nom_alpha_corrected + self.u_comp
-        
+
         beta = self.spiral_params.beta
         # u_res = CenterToRobotRot(beta - np.pi/2) @ u_res
         u_res = CenterToRobotRot(beta) @ u_res
@@ -333,7 +333,7 @@ class SpiralingController:
         self.optvar_init['x', 0] = self.optvar_x0[0]
 
         param = ca.vertcat(x0, self.x_sp, self.u_sp)
-        
+
         args = dict(x0=self.optvar_init,
                     lbx=self.optvar_lb,
                     ubx=self.optvar_ub,
