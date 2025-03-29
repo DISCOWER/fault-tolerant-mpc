@@ -24,3 +24,4 @@ polytope = "^0.2.5"
 pyyaml = "^6.0.2"
 qpsolvers = "^4.5.0"
 pympc = {git = "https://github.com/TobiaMarcucci/pympc.git"}
+sympy = "^1.13.3"
