@@ -47,10 +47,10 @@ controller.load_trajectory(params["traj_shape"], sim_duration)
 sim_env = SimulationEnvironment(model, controller)
 
 sim_env.set_initial_state(
-    position=[0,0,0],
-    velocity=[0,0,0],
-    orientation=R.from_euler("zyx", [20,30,10], degrees=True).as_quat(),
-    angular_velocity=[0,0,0]
+    position=[1,0,1],
+    velocity=[1,0.5,0],
+    orientation=R.from_euler("zyx", [50,30,-10], degrees=True).as_quat(),
+    angular_velocity=[0.3,0.8,-0.1]
 )
 
 # Run simulation

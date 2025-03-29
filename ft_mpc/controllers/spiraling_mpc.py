@@ -5,11 +5,13 @@ import time
 import random
 import pprint
 import copy
+from pathlib import Path
 
 from ft_mpc.controllers.tools.control_allocator import ControlAllocator
 from ft_mpc.controllers.tools.input_bounds import InputBounds
 from ft_mpc.controllers.tools.spiral_parameters import SpiralParameters
 from ft_mpc.util.utils import RotCasadi, RotFull, RotFullInv
+from ft_mpc.controllers.tools.terminal_ingredients import load_terminal_ingredients
 from ft_mpc.util.get_trajectory import load_trajectory
 from ft_mpc.util.controller_debug import ControllerDebug, DebugVal, Logger
 
@@ -76,8 +78,11 @@ class SpiralingController:
         self.running_cost = ca.Function('ln', [x, xr, Q, u, R], [ln])
 
         # Calculate terminal cost
-        # self.terminal_cost = 0
-        self.logger.warn("Terminal cost is not set yet")
+        self.terminal_cost, self.terminal_set = load_terminal_ingredients(str(Path(__file__).absolute().parent) + "/../config/terminal.yaml")
+
+        e = ca.MX.sym("e", 9)
+        # print(self.terminal_cost(*ca.vertsplit(e)))
+        # breakpoint()
 
     def build_solver(self):
         build_solver_start = time.time()
@@ -186,15 +191,15 @@ class SpiralingController:
         x_t = opt_var['x', self.Nt]
         x_r = x_ref[self.Nt*self.Nopt:(self.Nt+1)*self.Nopt]
 
-        # # Terminal Cost
-        # e_N = x_t[0:self.Nopt] - x_r
-        # obj += self.terminal_cost(*ca.vertsplit(e_N))
+        # Terminal Cost
+        e_N = x_t[0:self.Nopt] - x_r
+        obj += self.terminal_cost(*ca.vertsplit(e_N))
 
-        # # Terminal Constraint
-        # con_t = self.terminal_constraint
-        # con_ineq.append(ca.mtimes(con_t.A, e_N))
-        # con_ineq_lb.append(-ca.inf * np.ones_like(con_t.b))
-        # con_ineq_ub.append(con_t.b)
+        # Terminal Constraint
+        con_t = self.terminal_set
+        con_ineq.append(ca.mtimes(con_t.A, e_N))
+        con_ineq_lb.append(-ca.inf * np.ones_like(con_t.b))
+        con_ineq_ub.append(con_t.b)
 
         # Equality constraints are reformulated as inequality constraints with 0<=g(x)<=0
         # -> Refer to CasADi documentation: NLP solver only accepts inequality constraints
@@ -211,9 +216,12 @@ class SpiralingController:
         # Build NLP Solver (can also solve QP)
         nlp = dict(x=opt_var, f=obj, g=con, p=param_s)
         options = { # maybe use jit compiler?
+            # 'ipopt.print_level': 5,
             'ipopt.print_level': 0,
+            'ipopt.tol': 1e-3,
+            'ipopt.check_derivatives_for_naninf': "yes",
             'print_time': False,
-            'verbose': False,
+            'verbose': True,
             'expand': True
         }
         solver_opts = self.params.get("solver_opts", None)
@@ -316,10 +324,13 @@ class SpiralingController:
         if self.optimal_solution is not None:
             # Initial guess of the warm start variables
             self.optvar_init['x'] = self.optimal_solution['x'][1:] + [ca.DM([0] * self.Nx)]
+            # self.optvar_init['x'] = self.optimal_solution['x'][1:] + [ca.DM([0]*6 + [1e-5] * 3 + [0]*4)]
             self.optvar_init['u'] = self.optimal_solution['u'][1:] + [ca.DM([0] * self.Nu)]
         else:
             # Initialize with zero if no previous solution is available
             self.optvar_init = self.opt_var(0)
+            # for i in range(self.Nt+1):
+            #     self.optvar_init['x', i] = ca.DM([0]*6 + [0.1]*3 + [0]*4)
         self.optvar_init['x', 0] = self.optvar_x0[0]
 
         param = ca.vertcat(x0, self.x_sp, self.u_sp)

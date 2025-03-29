@@ -14,23 +14,19 @@ cost: sp.lambdify((ep1, ep2, ep3, ev1, ev2, ev3, eo1, eo2, eo3), Float('0.816400
   precision=53)*ep2 + Float('98.693442809531959', precision=53)*ev2) + Float('1.2957231801843869e-9',
   precision=53)*ev2 + ev3*(Float('28.068970562534886', precision=53)*ep3 + Float('98.693442809531959',
   precision=53)*ev3) + Float('1.2957231801843869e-9', precision=53)*ev3 + Float('188.73175405129777',
-  precision=53)*(eo1**4 + Float('9.9999999999999995e-7', precision=53))**Float('0.25',
-  precision=53) + Float('113.22405993640598', precision=53)*(eo2**4 + Float('9.9999999999999995e-7',
-  precision=53))**Float('0.25', precision=53) + Float('272.10279433469952', precision=53)*(eo3**4
-  + Float('9.9999999999999995e-7', precision=53))**Float('0.25', precision=53) + Float('253.03491195221793',
-  precision=53)*(eo3**6 + Float('9.9999999999999995e-7', precision=53))**Float('0.25',
-  precision=53) + Float('60.43994378281446', precision=53)*(eo3**8 + Float('9.9999999999999995e-7',
-  precision=53))**Float('0.25', precision=53) + Float('206.73155194899289', precision=53)*(eo1**2*eo2**2
-  + Float('9.9999999999999995e-7', precision=53))**Float('0.25', precision=53) + Float('188.69919481184218',
-  precision=53)*(eo1**4*eo2**4 + Float('9.9999999999999995e-7', precision=53))**Float('0.25',
-  precision=53) + Float('253.03491248574116', precision=53)*(eo1**4*eo3**2 + Float('9.9999999999999995e-7',
-  precision=53))**Float('0.25', precision=53) + Float('230.98821567464339', precision=53)*(eo1**4*eo3**4
-  + Float('9.9999999999999995e-7', precision=53))**Float('0.25', precision=53) + Float('206.71784029188882',
-  precision=53)*(eo2**4*eo3**2 + Float('9.9999999999999995e-7', precision=53))**Float('0.25',
-  precision=53) + Float('188.70670694436302', precision=53)*(eo2**4*eo3**4 + Float('9.9999999999999995e-7',
-  precision=53))**Float('0.25', precision=53) + Float('1.1908816373061584', precision=53)*(eo1**2*eo2**2*eo3**2
-  + Float('9.9999999999999995e-7', precision=53))**Float('0.25', precision=53) + Float('-68.419126982575264',
-  precision=53), modules={'Abs':ca.fabs, 'tanh':ca.tanh})
+  precision=53)*Abs(eo1**2)**Float('0.5', precision=53) + Float('113.22405993640598',
+  precision=53)*Abs(eo2**2)**Float('0.5', precision=53) + Float('272.10279433469952',
+  precision=53)*Abs(eo3**2)**Float('0.5', precision=53) + Float('253.03491195221793',
+  precision=53)*Abs(eo3**3)**Float('0.5', precision=53) + Float('60.43994378281446',
+  precision=53)*Abs(eo3**4)**Float('0.5', precision=53) + Float('206.73155194899289',
+  precision=53)*Abs(eo1*eo2)**Float('0.5', precision=53) + Float('188.69919481184218',
+  precision=53)*Abs(eo1**2*eo2**2)**Float('0.5', precision=53) + Float('253.03491248574116',
+  precision=53)*Abs(eo1**2*eo3)**Float('0.5', precision=53) + Float('230.98821567464339',
+  precision=53)*Abs(eo1**2*eo3**2)**Float('0.5', precision=53) + Float('206.71784029188882',
+  precision=53)*Abs(eo2**2*eo3)**Float('0.5', precision=53) + Float('188.70670694436302',
+  precision=53)*Abs(eo2**2*eo3**2)**Float('0.5', precision=53) + Float('1.1908816373061584',
+  precision=53)*Abs(eo1*eo2*eo3)**Float('0.5', precision=53), modules={'Abs':ca.fabs,
+  'tanh':ca.tanh})
 term_set: '{"A": [[0.0464226563653304, 0.0, 0.0, -0.9989218873245227, 0.0, 0.0, 0.0,
   0.0, 0.0], [0.9701425001453363, 0.0, 0.0, 0.24253562503631518, 0.0, 0.0, 0.0, 0.0,
   0.0], [-0.9701425001453353, 0.0, 0.0, -0.24253562503631898, 0.0, 0.0, 0.0, 0.0,
