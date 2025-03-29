@@ -4,8 +4,9 @@ traj_shape: "hover"
 # traj_shape: "circle_r_0.65_sPerFullCircle_40"
 traj_duration: 30
 # traj_duration: 150
-# traj_duration: 20
-actuator_failures: 
+# traj_duration: 15 
+actuator_failures: # Do not change these, the 3D version does not support this!
+                   # Your're welcome to play around with it in 2D version
   - act_id: 10
     intensity: 1.0
     start_time: 0
@@ -36,4 +37,5 @@ tuning:
       max_acceleration: 0.0
       time_scaling: 5
       # empc_horizon: 15
+      # empc_horizon: 3
       empc_horizon: 3

@@ -192,7 +192,7 @@ def animate_trajectory(history, time, model=None,
     ax.set_xlabel('X Position')
     ax.set_ylabel('Y Position')
     ax.set_zlabel('Z Position')
-    ax.set_title('3D Box Moving Along Trajectory with Thrusters')
+    ax.set_title('Spacecraft Moving Along Trajectory with Thrusters')
     
     # Create arrow artists for each thruster
     for i in range(16):

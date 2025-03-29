@@ -20,6 +20,14 @@ class SimulationEnvironment:
         self.model = model
         self.set_controller(controller)
         self.dt = self.model.dt
+        
+        # e.g. position: max. rate of divergence is 1cm/s with dt=0.1s
+        self.noise = {
+            'position': 0.001,         # uniform distribution, unit: meter
+            'velocity': 0.001,         # uniform distribution, unit: meter/second
+            'orientation': 0.001,      # uniform distribution 
+            'angular_velocity': 0.001, # uniform distribution, unit: rad/second
+        }
 
         self.state = np.zeros(model.Nx)
 
@@ -75,6 +83,13 @@ class SimulationEnvironment:
         
         # Compute state derivatives
         x_new = self.model.dynamics(self.state, u)
+
+        # add noise
+        x_new[0:3]  += np.random.uniform(0, self.noise['position'], size=(3))
+        x_new[3:6]  += np.random.uniform(0, self.noise['velocity'], size=(3))
+        x_new[6:10] += np.random.uniform(0, self.noise['orientation'], size=(4))
+        x_new[10:]  += np.random.uniform(0, self.noise['angular_velocity'], size=(3))
+
         x_new = self.model.normalize_quaternion(x_new)
 
         # Update state

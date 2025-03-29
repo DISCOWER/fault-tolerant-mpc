@@ -2,3 +2,10 @@
 *.pyc
 **/__pycache__/
 **/data/
+**/.bash_history
+**/.cache/
+**/.config/
+**/.local/
+**/.pki/
+**/snap/
+

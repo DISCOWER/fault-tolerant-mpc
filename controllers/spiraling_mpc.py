@@ -218,8 +218,9 @@ class SpiralingController:
             # 'ipopt.print_level': 5,
             'ipopt.print_level': 0,
             'ipopt.tol': 1e-3,
+            'ipopt.check_derivatives_for_naninf': "yes",
             'print_time': False,
-            'verbose': False,
+            'verbose': True,
             'expand': True
         }
         solver_opts = self.params.get("solver_opts", None)
@@ -322,10 +323,13 @@ class SpiralingController:
         if self.optimal_solution is not None:
             # Initial guess of the warm start variables
             self.optvar_init['x'] = self.optimal_solution['x'][1:] + [ca.DM([0] * self.Nx)]
+            # self.optvar_init['x'] = self.optimal_solution['x'][1:] + [ca.DM([0]*6 + [1e-5] * 3 + [0]*4)]
             self.optvar_init['u'] = self.optimal_solution['u'][1:] + [ca.DM([0] * self.Nu)]
         else:
             # Initialize with zero if no previous solution is available
             self.optvar_init = self.opt_var(0)
+            # for i in range(self.Nt+1):
+            #     self.optvar_init['x', i] = ca.DM([0]*6 + [0.1]*3 + [0]*4)
         self.optvar_init['x', 0] = self.optvar_x0[0]
 
         param = ca.vertcat(x0, self.x_sp, self.u_sp)
