@@ -7,7 +7,7 @@ This package relies on [Python Poetry](https://python-poetry.org/docs/#installin
 
 1. Clone the repository:
 ```bash
-git clone git@github.com:DISCOWER/ft-mpc.git
+git clone git@github.com:DISCOWER/fault-tolerant-mpc.git
 ```
 
 _Optional_: Configure `poetry` to create a local virtual environment. This is recommended to use the project with IDEs such as VSCode.
