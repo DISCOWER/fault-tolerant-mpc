@@ -13,7 +13,7 @@ from ft_mpc.util.broken_thruster import BrokenThruster
 from ft_mpc.util.controller_debug import ControllerDebug
 
 # Prepare parameters
-params = yaml.safe_load(open(str(Path(__file__).absolute().parent) + "/../ft_mpc/config/reactive.yaml"))  #! Add proper path handling
+params = yaml.safe_load(open(str(Path(__file__).absolute().parent) + "/../ft_mpc/config/reactive.yaml"))
 dt = params["time_step"]
 sim_duration = params["traj_duration"]
 
