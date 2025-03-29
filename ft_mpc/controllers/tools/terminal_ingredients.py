@@ -10,9 +10,9 @@ from pympc.geometry.polyhedron import Polyhedron
 from pympc.dynamics.discrete_time_systems import LinearSystem
 from pympc.control.controllers import ModelPredictiveController
 
-from util.polytope import MyPolytope
-from util.utils import RotCasadi, RotFull, RotFullInv
-from controllers.tools.input_bounds import InputBounds
+from ft_mpc.util.polytope import MyPolytope
+from ft_mpc.util.utils import RotCasadi, RotFull, RotFullInv
+from ft_mpc.controllers.tools.input_bounds import InputBounds
 
 RobotToCenterRot = RotFullInv
 CenterToRobotRot = RotFull
@@ -98,7 +98,7 @@ class explicitMPCTerminalIngredients:
         j22 = J[2,2].item()
 
         # create corner points of a box centered at zero with edge_length = 2u
-        box_corners = list(itertools.product(*[[-emax[i], emax[i]] for i in range(3)])) 
+        box_corners = list(itertools.product(*[[-emax[i], emax[i]] for i in range(3)]))
 
         # The upper bound on the feedback-linearization terms
         rNorm = np.linalg.norm(r)
@@ -147,16 +147,16 @@ class explicitMPCTerminalIngredients:
             # 1. Extract current variable values
             x_current = opti.debug.value(bound)
             print(f"Current x values: {x_current}")
-            
+
             # 2. Check constraint violations
             for i, constraint in enumerate(constraints):
                 violation = opti.debug.value(constraint)
                 print(f"Constraint {i} violation: {violation}")
-            
+
             # 3. Check objective value
             obj_value = opti.debug.value(obj)
             print(f"Current objective value: {obj_value}")
-        
+
         print(sol.value(bound))
 
         return sol.value(bound)
@@ -178,7 +178,7 @@ class explicitMPCTerminalIngredients:
         # # here find the correct R
         # R = np.array(self.R[0,0])**2 * self.r**2 * self.mass**4 + np.array(self.R[0,0]) * self.mass**2
         # if self.Q[0,0] != self.Q[1,1] or self.Q[2,2] != self.Q[3,3]:
-        #     raise ValueError("Not mathematically necessary, but the given implementation " + 
+        #     raise ValueError("Not mathematically necessary, but the given implementation " +
         #                      "requires Q[0,0] = Q[1,1] and Q[2,2] = Q[3,3].")
         #     # otherwise, the empc controller needs to be calculated twice with the different parameters
         # Q = np.array([[self.Q[0,0], 0],[0, self.Q[2,2]]])
@@ -195,7 +195,7 @@ class explicitMPCTerminalIngredients:
         # Adapt Q and R to the time scaling
         R *= time_scaling
         Q *= time_scaling
-        
+
         # Terminal controller for the explicit MPC
         P, K = sys.solve_dare(Q, R)
 
@@ -421,14 +421,14 @@ class PolytopeDecoder(json.JSONDecoder):
 
 def store_terminal_ingredients(cost_code, term_set, path):
     ingredients = {
-        "cost": cost_code, 
+        "cost": cost_code,
         "term_set": json.dumps(term_set, cls=PolytopeEncoder)
     }
     yaml.dump(ingredients, open(path, "w"))
 
 def load_terminal_ingredients(path):
     ingredients = yaml.safe_load(open(path))
-    
+
     t_cost =eval(ingredients["cost"], {
         'sp':sp,
         'Symbol':sp.Symbol,
@@ -446,7 +446,7 @@ def load_terminal_ingredients(path):
         'eo1':sp.Symbol('eo1'),
         'eo2':sp.Symbol('eo2'),
         'eo3':sp.Symbol('eo3')
-    }) 
+    })
     t_set = json.loads(ingredients["term_set"], cls=PolytopeDecoder)
 
     return t_cost, t_set

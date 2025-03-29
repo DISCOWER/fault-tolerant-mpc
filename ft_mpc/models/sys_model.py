@@ -2,8 +2,8 @@ import numpy as np
 import casadi as ca
 
 # from util.utils import Rot, RotInv
-from util.broken_thruster import BrokenThruster
-from util.utils import RotCasadi
+from ft_mpc.util.broken_thruster import BrokenThruster
+from ft_mpc.util.utils import RotCasadi
 
 def OmegaOperator(omega):
     """
@@ -11,7 +11,7 @@ def OmegaOperator(omega):
 
     Args:
         omega (ca.MX): 3x1 angular velocity vector
-    
+
     Returns:
         ca.MX: 4x4 matrix
     """
@@ -24,7 +24,7 @@ def OmegaOperator(omega):
     mat[2,1] = -omega[0]
     mat[1,2] =  omega[0]
     mat[3,0:3] = -omega.T
-    mat[0:3,3] = omega   
+    mat[0:3,3] = omega
 
     return mat
 
@@ -33,7 +33,7 @@ class SystemModel:
     System model for a 3D rigid body using Euler forward discretization.
 
     System state in form
-        [ 
+        [
             pos         (3x1), global coords
             vel         (3x1), global coords
             orientation (4x1), quaternion
@@ -167,7 +167,7 @@ class SystemModel:
 
         Args:
             state (ca.MX): Full state vector
-        
+
         Returns:
             state (ca.MX): State vector with normalized quaternion
         """
@@ -201,7 +201,7 @@ class SystemModel:
                 u_elements.append(0.0)
             else:
                 u_elements.append(u[i])
-        
+
         # Create a new symbolic vector
         modified_u = ca.vertcat(*u_elements)
 
@@ -214,7 +214,7 @@ class SystemModel:
         dx_dt = velocity
         # Compute linear acceleration (F = ma)
         dv_dt = RotCasadi(orientation).T @ force / self.mass
-        
+
         # Compute angular velocity in body frame
         dq_dt = 0.5 * OmegaOperator(angular_velocity) @ orientation
         # Compute angular acceleration in body frame
@@ -222,7 +222,7 @@ class SystemModel:
         inertia_omega = self.inertia @ angular_velocity
         cross_term = ca.cross(angular_velocity, inertia_omega)
         domega_dt = self.inertia_inv @ (torque - cross_term)
-        
+
         return ca.vertcat(*[dx_dt, dv_dt, dq_dt, domega_dt])
 
     def set_fault(self, broken_thruster):
@@ -246,7 +246,7 @@ class SystemModel:
     def Nu(self):
         return self.Nu_full
 
-    
+
 if __name__ == "__main__":
     np.set_printoptions(linewidth=150)
 

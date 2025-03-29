@@ -3,16 +3,16 @@ import matplotlib.pyplot as plt
 import yaml
 from scipy.spatial.transform import Rotation as R
 
-from sim_env import SimulationEnvironment
-from models.sys_model import SystemModel
-from models.spiral_model import SpiralModel
-from controllers.dummy_controller import Controller
-from controllers.spiraling_mpc import SpiralingController
-from util.broken_thruster import BrokenThruster
-from util.controller_debug import ControllerDebug
+from ft_mpc.simulation.sim_env import SimulationEnvironment
+from ft_mpc.models.sys_model import SystemModel
+from ft_mpc.models.spiral_model import SpiralModel
+from ft_mpc.controllers.dummy_controller import Controller
+from ft_mpc.controllers.spiraling_mpc import SpiralingController
+from ft_mpc.util.broken_thruster import BrokenThruster
+from ft_mpc.util.controller_debug import ControllerDebug
 
 # Prepare parameters
-params = yaml.safe_load(open("config/reactive.yaml"))
+params = yaml.safe_load(open("ft_mpc/config/reactive.yaml"))  #! Add proper path handling
 dt = params["time_step"]
 sim_duration = params["traj_duration"]
 

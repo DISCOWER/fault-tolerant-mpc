@@ -3,7 +3,7 @@ import casadi as ca
 import matplotlib.pyplot as plt
 import copy
 
-from util.animate import animate_trajectory
+from ft_mpc.util.animate import animate_trajectory
 
 class DebugVal:
     def __init__(self, controller, t):
@@ -71,7 +71,7 @@ class DebugVal:
             self.velocity_error = self.desired_velocity - self.velocity
             self.orientation_error = self.desired_orientation - self.orientation
             self.angular_velocity_error = self.desired_angular_velocity - self.angular_velocity
-        
+
         if self.circle_position is not None and self.desired_position is not None:
             self.circle_position_error = self.desired_position - self.circle_position
             self.circle_velocity_error = self.desired_velocity - self.circle_velocity
@@ -88,7 +88,7 @@ class ControllerDebug:
         # t = [h.time for h in self.history]
         # return np.array(t).T
         return [h.time for h in self.history]
-    
+
     def show_direct_inputs(self):
         inputs = [h.input for h in self.history]
         inputs = np.array(inputs)
@@ -149,7 +149,7 @@ class ControllerDebug:
         orientation_errors = None
 
         self._show_errors(position_errors, velocity_errors, orientation_errors, angular_velocity_errors, "Orbit")
-    
+
     def show_robot_errors(self):
         """ Show error between robot and trajectory """
         position_errors = [h.position_error for h in self.history]
@@ -159,7 +159,7 @@ class ControllerDebug:
 
         self._show_errors(position_errors, velocity_errors, orientation_errors, angular_velocity_errors, "Robot")
 
-    def _show_errors(self, position_errors, velocity_errors, orientation_errors, 
+    def _show_errors(self, position_errors, velocity_errors, orientation_errors,
                      angular_velocity_errors, description):
 
         position_errors = np.array(position_errors)
@@ -206,31 +206,31 @@ class ControllerDebug:
         input = [h.input for h in self.history]
         faulty_inputs = [h.faulty_force for h in self.history]
 
-        # animate_trajectory(positions=position, 
-        #                    quaternions=orientation, 
-        animate_trajectory(history=self.history, 
-                           time=self.get_time(), 
+        # animate_trajectory(positions=position,
+        #                    quaternions=orientation,
+        animate_trajectory(history=self.history,
+                           time=self.get_time(),
                            model=model)
 
     def export(self, file_path="./data/debug_data"):
         """ Export data to CSV file """
         h = self.history[0]
         example = np.concatenate((
-            np.array([h.time]), h.position.flatten(), h.velocity.flatten(), h.orientation.flatten(), 
-            h.angular_velocity.flatten(), h.input.flatten(), h.force.flatten(), h.torque.flatten(), 
-            h.circle_position.flatten(), h.circle_velocity.flatten(), h.circle_angular_velocity.flatten(), 
-            h.position_error.flatten(), h.velocity_error.flatten(), h.orientation_error.flatten(), 
-            h.angular_velocity_error.flatten(), h.circle_position_error.flatten(), h.circle_velocity_error.flatten(), 
+            np.array([h.time]), h.position.flatten(), h.velocity.flatten(), h.orientation.flatten(),
+            h.angular_velocity.flatten(), h.input.flatten(), h.force.flatten(), h.torque.flatten(),
+            h.circle_position.flatten(), h.circle_velocity.flatten(), h.circle_angular_velocity.flatten(),
+            h.position_error.flatten(), h.velocity_error.flatten(), h.orientation_error.flatten(),
+            h.angular_velocity_error.flatten(), h.circle_position_error.flatten(), h.circle_velocity_error.flatten(),
             h.circle_angular_velocity_error.flatten()
         ))
         data = np.zeros((len(self.history), example.size))
 
         for i, h in enumerate(self.history):
             data[i, :] = np.concatenate((
-                np.array([h.time]), h.position.flatten(), h.velocity.flatten(), h.orientation.flatten(), 
-                h.angular_velocity.flatten(), h.input.flatten(), h.force.flatten(), h.torque.flatten(), 
-                h.circle_position.flatten(), h.circle_velocity.flatten(), h.circle_angular_velocity.flatten(), 
-                h.position_error.flatten(), h.velocity_error.flatten(), h.orientation_error.flatten(), 
+                np.array([h.time]), h.position.flatten(), h.velocity.flatten(), h.orientation.flatten(),
+                h.angular_velocity.flatten(), h.input.flatten(), h.force.flatten(), h.torque.flatten(),
+                h.circle_position.flatten(), h.circle_velocity.flatten(), h.circle_angular_velocity.flatten(),
+                h.position_error.flatten(), h.velocity_error.flatten(), h.orientation_error.flatten(),
                 h.angular_velocity_error.flatten(), h.circle_position_error.flatten(),
                 h.circle_velocity_error.flatten(), h.circle_angular_velocity_error.flatten()
             ))
@@ -255,7 +255,7 @@ class ControllerDebug:
              "circle_velocity_error_x", "circle_velocity_error_y", "circle_velocity_error_z",
              "circle_angular_velocity_error_x", "circle_angular_velocity_error_y", "circle_angular_velocity_error_z"
             ]
-            
+
         np.savetxt(file_path+".csv", data, delimiter=";", header=";".join(header))
 
 class Logger:

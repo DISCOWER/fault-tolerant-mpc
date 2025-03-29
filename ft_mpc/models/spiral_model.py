@@ -1,16 +1,16 @@
 import numpy as np
 import casadi as ca
 
-from models.sys_model import SystemModel, OmegaOperator
-from controllers.tools.spiral_parameters import SpiralParameters
-from util.utils import RotCasadi, Rot, RotInv
+from ft_mpc.models.sys_model import SystemModel, OmegaOperator
+from ft_mpc.controllers.tools.spiral_parameters import SpiralParameters
+from ft_mpc.util.utils import RotCasadi, Rot, RotInv
 
 class SpiralModel(SystemModel):
     """
     Spiraling model for micro-orbiting
 
     System state in form
-        [ 
+        [
             pos         (3x1), global coords
             vel         (3x1), global coords
             ang_vel     (3x1), body coords
@@ -81,7 +81,7 @@ class SpiralModel(SystemModel):
 
         Args:
             state (ca.MX): Full state vector (center-point state)
-        
+
         Returns:
             state (ca.MX): State vector with normalized quaternion (center-point state)
         """
@@ -132,7 +132,7 @@ class SpiralModel(SystemModel):
     def Nu(self):
         return self.Nu_simplified
 
-""" 
+"""
 For later reference:
 Transformation of an inertia tensor to another coordinate system:
     I' = R I R^T
