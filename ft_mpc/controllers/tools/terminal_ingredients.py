@@ -5,6 +5,7 @@ import sympy as sp
 import scipy.linalg as la
 import yaml
 import json
+from pathlib import Path
 
 from pympc.geometry.polyhedron import Polyhedron
 from pympc.dynamics.discrete_time_systems import LinearSystem
@@ -475,11 +476,11 @@ def load_terminal_ingredients(path):
 if __name__ == "__main__":
     import yaml
 
-    from models.sys_model import SystemModel
-    from models.spiral_model import SpiralModel
-    from util.broken_thruster import BrokenThruster
+    from ft_mpc.models.sys_model import SystemModel
+    from ft_mpc.models.spiral_model import SpiralModel
+    from ft_mpc.util.broken_thruster import BrokenThruster
 
-    params = yaml.safe_load(open("config/reactive.yaml"))
+    params = yaml.safe_load(open("ft_mpc/config/reactive.yaml"))
     dt = params["time_step"]
     sim_duration = params["traj_duration"]
 
