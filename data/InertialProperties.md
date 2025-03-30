@@ -21,6 +21,7 @@ $$
     \end{smallmatrix} \right]
 \end{align*}
 $$
+with d=12 cm.
 
 ### 3D Spacecraft
 
