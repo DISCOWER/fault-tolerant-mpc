@@ -2,7 +2,7 @@
 
 | Robot:              | 2D Freeflyer | 3D Spacecraft |
 | ---------------- | ------ | ---- |
-| $\delta_t$ [s]       |   0.1   | 0.1 |
+| $\delta$ [s]       |   0.1   | 0.1 |
 | Mass $m$ [kg]          |   14.5   | 16.8 |
 | Inertia $J$ [kg $m^2$]   |  0.370   | diag($0.2,0.3,0.25$) |
 | Maximum force $f^{max}$ [N] |  1.75   | 1.75 |
