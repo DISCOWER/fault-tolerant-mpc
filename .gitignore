@@ -9,3 +9,4 @@
 **/snap/
 data/**
 !data/.gitkeep
+!data/InertialProperties.md

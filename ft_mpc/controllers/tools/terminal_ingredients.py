@@ -480,7 +480,7 @@ if __name__ == "__main__":
     from ft_mpc.models.spiral_model import SpiralModel
     from ft_mpc.util.broken_thruster import BrokenThruster
 
-    params = yaml.safe_load(open("ft_mpc/config/reactive.yaml"))
+    params = yaml.safe_load(open(str(Path(__file__).absolute().parent) + "/../../config/reactive.yaml"))
     dt = params["time_step"]
     sim_duration = params["traj_duration"]
 

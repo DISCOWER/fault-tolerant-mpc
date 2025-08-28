@@ -1,5 +1,7 @@
 https://github.com/user-attachments/assets/1233ae1e-a9e8-4787-b77b-609ad5c37aaf
 
+<sub>*Note:* If the video does not play, try refreshing the page or use [this link](https://youtu.be/kNBUzAa53-w).</sub>
+
 # Fault-Tolerant Model Predictive Control for Spacecraft
 
 In this package we provide the source for the article "Fault-Tolerant Model Predictive Control for Spacecraft" R. Stockner, P. Roque, M. Charitidou, and Dimos V. Dimarogonas.
